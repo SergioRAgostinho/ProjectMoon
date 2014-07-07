@@ -3,15 +3,34 @@
 
 Application::Application()
 {
+	dInitODE2(0);
 }
 
 
 Application::~Application()
 {
+	// Shutdown threal pool
+	dThreadingImplementationShutdownProcessing(pSolverThreading);
+	dThreadingFreeThreadPool(pSolverThreadPool);
+	dWorldSetStepThreadingImplementation(pWorld, NULL, NULL); 
+	dThreadingFreeImplementation(pSolverThreading);
+
+	//Destroy collision group
+	dJointGroupDestroy(pCollisionJG);
+
+	//Destroy colision space and sim world
+	dSpaceDestroy(pSpace);
+	dWorldDestroy(pWorld); 
+
+	//Close library
+	dCloseODE();
 }
 
 int Application::run()
 {
+	//Set physics
+	setPhysics();
+
 	//Set the graphical context and related traits
 	setGraphicsContext();
 
@@ -24,12 +43,71 @@ int Application::run()
 	return 0;
 }
 
+//FIXME
+void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
+	
+	int i, n;
+	dBodyID b1 = dGeomGetBody(o1);
+	dBodyID b2 = dGeomGetBody(o2);
+
+	if (b1 && b2 && dAreConnected(b1, b2))
+		return;
+
+	const int N = 4;
+	dContact contact[N];
+	n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
+	if (n > 0) {
+		for (i = 0; i<n; i++) {
+			contact[i].surface.mode = dContactSlip1 | dContactSlip2 | dContactSoftERP | dContactSoftCFM | dContactApprox1;
+			if (dGeomGetClass(o1) == dSphereClass || dGeomGetClass(o2) == dSphereClass)
+				contact[i].surface.mu = 20;
+			else
+				contact[i].surface.mu = 0.5;
+			contact[i].surface.slip1 = 0.0;
+			contact[i].surface.slip2 = 0.0;
+			contact[i].surface.soft_erp = 0.8;
+			contact[i].surface.soft_cfm = 0.01;
+			dJointID c = dJointCreateContact(pWorld, pCollisionJG, contact + i);
+			dJointAttach(c, dGeomGetBody(o1), dGeomGetBody(o2));
+		}
+	}
+}
+
+void Application::setPhysics() {
+	// recreate world
+	pWorld = dWorldCreate();
+	dWorldSetGravity(pWorld, 0, 0, -9.81);
+	dWorldSetCFM(pWorld, 1e-10);
+	dWorldSetERP(pWorld, 0.8);
+	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
+
+	//Create space for establising collision domain
+	pSpace = dSweepAndPruneSpaceCreate(0, dSAP_AXES_XYZ);
+
+	//Initialize the collision joint group
+	pCollisionJG = dJointGroupCreate(0);
+
+	//Setting multithreaded support for the physical solver
+	pSolverThreading = dThreadingAllocateMultiThreadedImplementation();
+	pSolverThreadPool = dThreadingAllocateThreadPool(4, 0, dAllocateFlagBasicData, NULL);
+	dThreadingThreadPoolServeMultiThreadedImplementation(pSolverThreadPool, pSolverThreading);
+	dWorldSetStepThreadingImplementation(pWorld, dThreadingImplementationGetFunctions(pSolverThreading), pSolverThreading);
+
+	dAllocateODEDataForThread(dAllocateMaskAll);
+}
+
 void Application::renderLoop() {
 	
 	camManip = new osgGA::TrackballManipulator();
 	viewer.setCameraManipulator(camManip);
 	while (!viewer.done())
 	{
+		//Physics update
+		//dSpaceCollide(pSpace, 0, &nearCallback); <-FIXME
+		dWorldQuickStep(pWorld, stepSize);
+		dJointGroupEmpty(pCollisionJG);
+
+		//Renders frame
 		viewer.frame();
 	}
 
