@@ -5,8 +5,11 @@
 #include <osg/ShapeDrawable>
 #include <osgGA/TrackballManipulator>
 
+#ifndef dDOUBLE
 #define dDOUBLE
+#endif
 #include <ode/ode.h>
+#include <MB/cube.h>
 
 class Application
 {
@@ -27,9 +30,7 @@ class Application
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-	osg::ref_ptr<osg::Box> box;
-	osg::ref_ptr<osg::Geode> boxGeode;
-	osg::ref_ptr<osg::ShapeDrawable> boxShape;
+	Cube* cube;
 
 	////////////////////////
 	// ODE (physics)
@@ -68,7 +69,7 @@ class Application
 	void setPhysics();
 
 	//Function called everytime two objects are potencially near
-	void nearCallback(void *data, dGeomID o1, dGeomID o2);
+	static void nearCallback(void *data, dGeomID o1, dGeomID o2);
 
 public:
 	Application();

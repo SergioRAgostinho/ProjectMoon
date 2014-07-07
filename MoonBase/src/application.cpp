@@ -9,6 +9,9 @@ Application::Application()
 
 Application::~Application()
 {
+	//FIXME
+	delete cube;
+
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
 	dThreadingFreeThreadPool(pSolverThreadPool);
@@ -43,12 +46,12 @@ int Application::run()
 	return 0;
 }
 
-//FIXME
 void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	
 	int i, n;
 	dBodyID b1 = dGeomGetBody(o1);
 	dBodyID b2 = dGeomGetBody(o2);
+	Application* app = (Application*)data;
 
 	if (b1 && b2 && dAreConnected(b1, b2))
 		return;
@@ -67,7 +70,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 			contact[i].surface.slip2 = 0.0;
 			contact[i].surface.soft_erp = 0.8;
 			contact[i].surface.soft_cfm = 0.01;
-			dJointID c = dJointCreateContact(pWorld, pCollisionJG, contact + i);
+			dJointID c = dJointCreateContact(app->pWorld, app->pCollisionJG, contact + i);
 			dJointAttach(c, dGeomGetBody(o1), dGeomGetBody(o2));
 		}
 	}
@@ -76,7 +79,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 void Application::setPhysics() {
 	// recreate world
 	pWorld = dWorldCreate();
-	dWorldSetGravity(pWorld, 0, 0, -9.81);
+	dWorldSetGravity(pWorld, 0, 0, -0.001);
 	dWorldSetCFM(pWorld, 1e-10);
 	dWorldSetERP(pWorld, 0.8);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
@@ -103,9 +106,12 @@ void Application::renderLoop() {
 	while (!viewer.done())
 	{
 		//Physics update
-		//dSpaceCollide(pSpace, 0, &nearCallback); <-FIXME
+		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
+
+		//Update our cube position
+		cube->update();
 
 		//Renders frame
 		viewer.frame();
@@ -115,14 +121,13 @@ void Application::renderLoop() {
 
 void Application::populateScene() {
 
-	box = new osg::Box(osg::Vec3(0, 0, 0), 1);
-	boxShape = new osg::ShapeDrawable(box.get());
-	boxGeode = new osg::Geode();
-	boxGeode->addDrawable(boxShape.get());
-
+	cube = new Cube(pWorld, pSpace, 1);
 	root = new osg::Group;
-	root->addChild(boxGeode.get());
+	root->addChild(cube->getPAT());
 	viewer.setSceneData(root.get());
+
+	//impose some speed to the cube
+	cube->setAngularVelocity(0, 0, 0.1);
 }
 
 void Application::setGraphicsContext() {
