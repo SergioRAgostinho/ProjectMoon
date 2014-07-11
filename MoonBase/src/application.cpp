@@ -103,6 +103,8 @@ void Application::renderLoop() {
 	
 	camManip = new osgGA::TrackballManipulator();
 	viewer.setCameraManipulator(camManip);
+
+
 	while (!viewer.done())
 	{
 		//Physics update
@@ -162,4 +164,7 @@ void Application::setGraphicsContext() {
 
 	// add this slave camera to the viewer, with a shift left of the projection matrix
 	viewer.addSlave(cameraR.get(), osg::Matrixd::translate(-.06, 0, 0), osg::Matrixd());
+    
+    //TEST
+    viewer.addEventHandler(new MouseEventHandler(cameraL.get()));
 }

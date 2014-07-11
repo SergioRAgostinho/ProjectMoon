@@ -1,7 +1,7 @@
 #include <MB/cube.h>
 
 
-Cube::Cube(dWorldID w, dSpaceID s, double size)
+Cube::Cube(dWorldID w, dSpaceID s, dReal size)
 {
 	//Physics
 	pWorld = w;
@@ -37,7 +37,7 @@ void Cube::setPosition(double x, double y, double z) {
 
 void Cube::setOrientationQuat(double x, double y, double z, double w) {
 	gT->setAttitude(osg::Quat(x, y, z, w));
-	dQuaternion q = { w, x, y, z };
+	dQuaternion q = { (dReal) w, (dReal) x, (dReal) y, (dReal) z };
 	dGeomSetQuaternion(pGeom, q);
 }
 

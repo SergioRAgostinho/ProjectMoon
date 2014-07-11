@@ -5,11 +5,12 @@
 #include <osg/ShapeDrawable>
 #include <osgGA/TrackballManipulator>
 
-#ifndef dDOUBLE
-#define dDOUBLE
-#endif
+//#ifndef dDOUBLE
+//#define dDOUBLE
+//#endif
 #include <ode/ode.h>
 #include <MB/cube.h>
+#include <MB/mouseeventhandler.hpp>
 
 class Application
 {
