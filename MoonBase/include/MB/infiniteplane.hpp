@@ -24,7 +24,7 @@ public:
 	osg::ref_ptr<osg::InfinitePlane> gShape;
 
     //Constructor
-    InfinitePlane(dWorldID pWorld, dSpaceID pSpace);
+    InfinitePlane(dSpaceID pSpace);
 
 };
 

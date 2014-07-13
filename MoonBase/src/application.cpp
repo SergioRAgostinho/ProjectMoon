@@ -14,6 +14,7 @@ Application::~Application()
 	//FIXME
 	delete cube;
     delete plane;
+    delete loadedObject;
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -107,6 +108,8 @@ void Application::renderLoop() {
     camManip = new osgGA::TrackballManipulator();
 	viewer.setCameraManipulator(camManip);
 
+    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(-M_PI/6.0, 1, 0, 0 ) * osg::Matrix::translate(0, -10, 6) );
+
 
 	while (!viewer.done())
 	{
@@ -127,16 +130,19 @@ void Application::renderLoop() {
 void Application::populateScene() {
 
 	cube = new Cube(pWorld, pSpace, 1);
-    plane = new InfinitePlane(pWorld,pSpace);
-	root = new osg::Group;
-	root->addChild(cube->getPAT());
-    //root->addChild(cube->osgGet());
-    root->addChild(plane->getGeode());
-	viewer.setSceneData(root.get());
+    plane = new InfinitePlane(pSpace);
+    loadedObject = new LoadedObject(pWorld, pSpace, "../res/hex.osgt");
+
 
 	//Place and set the cube
 	cube->setAngularVelocity(0, 0, 0.1);
     cube->setPosition(0, 0, 1);
+
+    //Add to root
+    root = new osg::Group;
+	root->addChild(cube->getPAT());
+    root->addChild(plane->getGeode());
+    viewer.setSceneData(root.get());
 
     //Subscribe object
     viewer.addEventHandler(new KeyboardEventHandler(cube));
@@ -175,5 +181,7 @@ void Application::setGraphicsContext() {
 	// add this slave camera to the viewer, with a shift left of the projection matrix
 	viewer.addSlave(cameraR.get(), osg::Matrixd::translate(-.06, 0, 0), osg::Matrixd());
 
+    //Place the camera
+    cameraL->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
 
 }

@@ -38,7 +38,9 @@ protected:
 
 public:
 
-    MoonBaseObject(dWorldID w, dSpaceID s);
+    MoonBaseObject();
+//    MoonBaseObject(dSpaceID s);
+//    MoonBaseObject(dWorldID w, dSpaceID s);
 
     //return the Geode pointer
     osg::Geode* getGeode();

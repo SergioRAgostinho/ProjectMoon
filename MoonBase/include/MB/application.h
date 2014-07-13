@@ -12,6 +12,7 @@
 #include <MB/cube.h>
 #include <MB/infiniteplane.hpp>
 #include <MB/mouseeventhandler.hpp>
+#include <MB/loadedobject.hpp>
 
 class Application
 {
@@ -34,6 +35,8 @@ class Application
 	osg::ref_ptr<osg::Group> root;
 	Cube* cube;
     InfinitePlane* plane;
+    LoadedObject* loadedObject;
+
 
 	////////////////////////
 	// ODE (physics)

@@ -18,9 +18,8 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
         {
             switch (ea.getKey()) {
                 case 'r':
-                    case 'R':
-                    std::cout << "pressed reset" << std::endl;
-                    obj->setPosition(0, 0, 1);
+                case 'R':
+                    obj->setPosition(0, 0, 2);
                     break;
                 default:
                     break;

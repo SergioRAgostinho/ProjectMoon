@@ -16,7 +16,7 @@
 //	dGeomSetBody(pGeom, pBody);
 //}
 
-MoonBaseObject::MoonBaseObject(dWorldID w, dSpaceID s) {
+MoonBaseObject::MoonBaseObject() {
 
     gGeometry = new osg::Geometry();
 	gGeode = new osg::Geode();

@@ -1,7 +1,7 @@
 #include <MB/cube.h>
 
 
-Cube::Cube(dWorldID w, dSpaceID s, dReal size) : MoonBaseObject(w,s)
+Cube::Cube(dWorldID w, dSpaceID s, dReal size)
 {
     pWorld = w;
     pSpace = s;

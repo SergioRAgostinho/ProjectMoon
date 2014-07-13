@@ -8,11 +8,11 @@
 
 #include <MB/infiniteplane.hpp>
 
-InfinitePlane::InfinitePlane(dWorldID pWorld, dSpaceID pSpace) :
-MoonBaseObject(pWorld, pSpace)
+InfinitePlane::InfinitePlane(dSpaceID pSpace)
 {
     //ODE
 	pGeom = dCreatePlane(pSpace, 0, 0, 1, 0);
+    MoonBaseObject::pSpace = pSpace;
 
     //OSG
     //Vertice array
