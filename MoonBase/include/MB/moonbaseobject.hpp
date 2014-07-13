@@ -40,9 +40,11 @@ public:
 
     MoonBaseObject(dWorldID w, dSpaceID s);
 
+    //return the Geode pointer
     osg::Geode* getGeode();
 
-
+    //Set the object position
+    void setPosition(double x, double y, double z);
 };
 
 

@@ -14,11 +14,11 @@
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler {
 
-    MoonBaseObject obj;
+    MoonBaseObject* obj;
 
 public:
 
-    KeyboardEventHandler(MoonBaseObject &o);
+    KeyboardEventHandler(MoonBaseObject* o);
 
     virtual bool handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa);
 

@@ -9,7 +9,7 @@
 #include <iostream>
 #include <MB/keyboardeventhandler.hpp>
 
-KeyboardEventHandler::KeyboardEventHandler(MoonBaseObject &o) : obj(o) {}
+KeyboardEventHandler::KeyboardEventHandler(MoonBaseObject* o) : obj(o) {}
 
 bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa) {
 
@@ -20,6 +20,7 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
                 case 'r':
                     case 'R':
                     std::cout << "pressed reset" << std::endl;
+                    obj->setPosition(0, 0, 1);
                     break;
                 default:
                     break;

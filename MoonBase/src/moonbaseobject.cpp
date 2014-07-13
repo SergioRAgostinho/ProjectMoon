@@ -26,3 +26,8 @@ MoonBaseObject::MoonBaseObject(dWorldID w, dSpaceID s) {
 }
 
 osg::Geode* MoonBaseObject::getGeode() { return gGeode; }
+
+void MoonBaseObject::setPosition(double x, double y, double z) {
+	gPAT->setPosition(osg::Vec3(x, y, z));
+	dGeomSetPosition(pGeom, (dReal) x, (dReal) y, (dReal) z);
+}

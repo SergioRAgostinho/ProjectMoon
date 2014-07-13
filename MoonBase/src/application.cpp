@@ -137,6 +137,9 @@ void Application::populateScene() {
 	//Place and set the cube
 	cube->setAngularVelocity(0, 0, 0.1);
     cube->setPosition(0, 0, 1);
+
+    //Subscribe object
+    viewer.addEventHandler(new KeyboardEventHandler(cube));
 }
 
 void Application::setGraphicsContext() {
@@ -171,7 +174,6 @@ void Application::setGraphicsContext() {
 
 	// add this slave camera to the viewer, with a shift left of the projection matrix
 	viewer.addSlave(cameraR.get(), osg::Matrixd::translate(-.06, 0, 0), osg::Matrixd());
-    
-    //FIXME: Kouse event subscription
-//    viewer.addEventHandler(new KeyboardEventHandler((MoonBaseObject &)nullptr));
+
+
 }

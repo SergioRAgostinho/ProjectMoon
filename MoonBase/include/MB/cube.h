@@ -11,20 +11,14 @@
 #include <osgManipulator/TrackballDragger>
 #include <osgManipulator/CommandManager>
 
-class Cube
+#include <MB/moonbaseobject.hpp>
+
+class Cube : public MoonBaseObject
 {
-	//Physic engine identities
-	dBodyID pBody;
-	dGeomID pGeom;
-	dWorldID pWorld;
-	dSpaceID pSpace;
-	
 	//Open Scene Graph
 	osg::ref_ptr<osg::Box> gBox;
 	osg::ref_ptr<osg::ShapeDrawable> gBoxShape;
-	osg::ref_ptr<osg::Geode> gGeode;
-	osg::ref_ptr<osg::PositionAttitudeTransform> gT;
-    
+
     //FIXME: OSG Manipulator
     osg::ref_ptr<osgManipulator::CommandManager> gCommandManager;
     osg::ref_ptr<osgManipulator::Selection> gSelection;
@@ -41,9 +35,6 @@ public:
 
 	//Return pointer to PAT
 	osg::PositionAttitudeTransform* getPAT();
-
-	//Set the object position
-	void setPosition(double x, double y, double z);
 
 	//Set the object position
 	void setOrientationQuat(double x, double y, double z, double w);
