@@ -10,6 +10,7 @@
 //#endif
 #include <ode/ode.h>
 #include <MB/cube.h>
+#include <MB/infiniteplane.hpp>
 #include <MB/mouseeventhandler.hpp>
 
 class Application
@@ -32,6 +33,7 @@ class Application
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
 	Cube* cube;
+    InfinitePlane* plane;
 
 	////////////////////////
 	// ODE (physics)

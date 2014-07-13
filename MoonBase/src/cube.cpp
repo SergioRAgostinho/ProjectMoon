@@ -19,6 +19,20 @@ Cube::Cube(dWorldID w, dSpaceID s, dReal size)
 	gGeode->addDrawable(gBoxShape.get());
 	gT = new osg::PositionAttitudeTransform();
 	gT->addChild(gGeode);
+    
+    //FIXME: OSG Manipulator
+    gDragger = new osgManipulator::TrackballDragger();
+    gDragger->setupDefaultGeometry();
+    osg::Matrix mat = osg::Matrix::translate(gT->getBound().center());
+    gDragger->setMatrix(mat);
+    gGroup->addChild(gDragger.get());
+    
+    gSelection = new osgManipulator::Selection();
+    gSelection->addChild(gT.get());
+    gGroup->addChild(gSelection.get());
+    
+    gCommandManager = new osgManipulator::CommandManager();
+    gCommandManager->connect(*(gDragger.get()),*(gSelection.get()));
 }
 
 
@@ -27,6 +41,8 @@ Cube::~Cube()
 }
 
 osg::Geode* Cube::getGeode() { return gGeode.get(); }
+
+osg::Group* Cube::osgGet() { return gGroup.get(); }
 
 osg::PositionAttitudeTransform* Cube::getPAT() { return gT.get(); }
 

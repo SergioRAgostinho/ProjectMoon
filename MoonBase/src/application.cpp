@@ -1,4 +1,6 @@
+
 #include <MB/application.h>
+#include <MB/keyboardeventhandler.hpp>
 
 
 Application::Application()
@@ -11,6 +13,7 @@ Application::~Application()
 {
 	//FIXME
 	delete cube;
+    delete plane;
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -79,7 +82,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 void Application::setPhysics() {
 	// recreate world
 	pWorld = dWorldCreate();
-	dWorldSetGravity(pWorld, 0, 0, -0.001);
+	dWorldSetGravity(pWorld, 0, 0, -0.01);
 	dWorldSetCFM(pWorld, 1e-10);
 	dWorldSetERP(pWorld, 0.8);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
@@ -100,8 +103,8 @@ void Application::setPhysics() {
 }
 
 void Application::renderLoop() {
-	
-	camManip = new osgGA::TrackballManipulator();
+
+    camManip = new osgGA::TrackballManipulator();
 	viewer.setCameraManipulator(camManip);
 
 
@@ -124,12 +127,16 @@ void Application::renderLoop() {
 void Application::populateScene() {
 
 	cube = new Cube(pWorld, pSpace, 1);
+    plane = new InfinitePlane(pWorld,pSpace);
 	root = new osg::Group;
 	root->addChild(cube->getPAT());
+    //root->addChild(cube->osgGet());
+    root->addChild(plane->getGeode());
 	viewer.setSceneData(root.get());
 
-	//impose some speed to the cube
+	//Place and set the cube
 	cube->setAngularVelocity(0, 0, 0.1);
+    cube->setPosition(0, 0, 1);
 }
 
 void Application::setGraphicsContext() {
@@ -165,6 +172,6 @@ void Application::setGraphicsContext() {
 	// add this slave camera to the viewer, with a shift left of the projection matrix
 	viewer.addSlave(cameraR.get(), osg::Matrixd::translate(-.06, 0, 0), osg::Matrixd());
     
-    //TEST
-    viewer.addEventHandler(new MouseEventHandler(cameraL.get()));
+    //FIXME: Kouse event subscription
+//    viewer.addEventHandler(new KeyboardEventHandler((MoonBaseObject &)nullptr));
 }

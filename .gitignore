@@ -12,6 +12,8 @@
 *.xcscheme
 *.xcuserstate
 *.plist
+*.osg
+*.osgt
 
 # User-specific files
 *.suo

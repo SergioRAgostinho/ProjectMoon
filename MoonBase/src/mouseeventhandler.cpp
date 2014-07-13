@@ -33,7 +33,7 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
                         if (osgManipulator::Dragger* dragger = dynamic_cast<osgManipulator::Dragger*>(*npIter)) {
                             dragger->handle(pointerInfo, ea, aa);
                             activeDragger = dragger;
-                            return false;
+                            return true;
                         }
                     }
                     
@@ -47,7 +47,7 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
                     pointerInfo.setCamera(camera);
 					pointerInfo.setMousePosition(ea.getX(), ea.getY());
 					activeDragger->handle(pointerInfo, ea, aa);
-					return false;
+					return true;
                 }
             default:
                 break;
