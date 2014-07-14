@@ -37,11 +37,8 @@ Cube::~Cube()
 {
 }
 
-osg::Geode* Cube::getGeode() { return gGeode.get(); }
 
 osg::Group* Cube::osgGet() { return gGroup.get(); }
-
-osg::PositionAttitudeTransform* Cube::getPAT() { return gPAT.get(); }
 
 
 

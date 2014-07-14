@@ -25,7 +25,9 @@ MoonBaseObject::MoonBaseObject() {
 	gPAT->addChild(gGeode);
 }
 
-osg::Geode* MoonBaseObject::getGeode() { return gGeode; }
+osg::Geode* MoonBaseObject::getGeode() { return gGeode.get(); }
+
+osg::PositionAttitudeTransform* MoonBaseObject::getPAT() { return gPAT.get(); }
 
 void MoonBaseObject::setPosition(double x, double y, double z) {
 	gPAT->setPosition(osg::Vec3(x, y, z));

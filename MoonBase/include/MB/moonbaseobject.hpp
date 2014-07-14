@@ -45,6 +45,9 @@ public:
     //return the Geode pointer
     osg::Geode* getGeode();
 
+    //Return pointer to PAT
+	osg::PositionAttitudeTransform* getPAT();
+
     //Set the object position
     void setPosition(double x, double y, double z);
 };

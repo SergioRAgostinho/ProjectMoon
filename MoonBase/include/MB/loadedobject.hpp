@@ -14,9 +14,19 @@
 
 class LoadedObject : public MoonBaseObject {
 
+    osg::ref_ptr<osg::Node> gNode;
+
+protected:
+
+    void triOGS2ODE();
+
 public:
 
-    LoadedObject(dWorldID w, dSpaceID s, std::string path);
+    LoadedObject(dWorldID w, dSpaceID s, const std::string& path);
+
+    osg::Node* getNode();
+
+    void setPosition(double x, double y, double z);
 };
 
 

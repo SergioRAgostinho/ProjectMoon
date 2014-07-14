@@ -138,10 +138,15 @@ void Application::populateScene() {
 	cube->setAngularVelocity(0, 0, 0.1);
     cube->setPosition(0, 0, 1);
 
+
+    //Place the hexagon
+    loadedObject->setPosition(0, 10, 0);
+
     //Add to root
     root = new osg::Group;
 	root->addChild(cube->getPAT());
     root->addChild(plane->getGeode());
+    root->addChild(loadedObject->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object

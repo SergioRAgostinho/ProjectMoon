@@ -29,12 +29,8 @@ public:
 	Cube(dWorldID w, dSpaceID s, dReal size);
 	~Cube();
 
-	//Return pointer to geode
-	osg::Geode* getGeode();
+	//Return different pointers
     osg::Group* osgGet();
-
-	//Return pointer to PAT
-	osg::PositionAttitudeTransform* getPAT();
 
 	//Set the object position
 	void setOrientationQuat(double x, double y, double z, double w);
