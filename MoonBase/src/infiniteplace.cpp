@@ -6,6 +6,10 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
+#ifndef dSINGLE
+#define dSINGLE
+#endif
+
 #include <MB/infiniteplane.hpp>
 
 InfinitePlane::InfinitePlane(dSpaceID pSpace)

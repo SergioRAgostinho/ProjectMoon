@@ -9,6 +9,7 @@
 #ifndef MoonBase_keyboardeventhandler_hpp
 #define MoonBase_keyboardeventhandler_hpp
 
+#include <Windows.h>
 #include <osgGA/GUIEventHandler>
 #include <MB/moonbaseobject.hpp>
 

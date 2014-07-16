@@ -9,6 +9,7 @@
 #ifndef MoonBase_mouseeventhandler_hpp
 #define MoonBase_mouseeventhandler_hpp
 
+#include <Windows.h>
 #include <osgGA/GUIEventHandler>
 #include <osgViewer/View>
 #include <osgManipulator/Dragger>

@@ -6,9 +6,9 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
-#include <osgDB/ReadFile>
 #include <MB/loadedobject.hpp>
 #include <MB/findnodevisitor.hpp>
+#include <osgDB/ReadFile>
 
 LoadedObject::LoadedObject(dWorldID w, dSpaceID s, const std::string& path) {
 
@@ -63,7 +63,7 @@ bool LoadedObject::triOGS2ODE() {
     int uniqueVerts = 0;
 
     //Worst case - n(n-1) runs
-    for (int i = 0; i < nVerts; ++i) {
+    for (unsigned int i = 0; i <  nVerts; ++i) {
         osg::Vec3 vert = (*array)[i];
         bool repeated = false;
 
@@ -88,11 +88,12 @@ bool LoadedObject::triOGS2ODE() {
     }
 
     //delete unnecessary space
-    float temp[3*uniqueVerts];
-    memcpy(temp,pVerts,sizeof(temp));
-    delete pVerts;
-    pVerts = new float[3*uniqueVerts]();
-    memcpy(pVerts, temp, sizeof(temp));
+	float* temp = new float[3*uniqueVerts]();
+    memcpy(temp,pVerts,3*uniqueVerts * sizeof(float));
+    delete[] pVerts;
+	pVerts = new float[3 * uniqueVerts]();
+	memcpy(pVerts, temp, 3 * uniqueVerts * sizeof(float));
+	delete[] temp;
 
 
 //    dTriMeshDataID new_tmdata = dGeomTriMeshDataCreate();

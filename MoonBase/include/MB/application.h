@@ -1,14 +1,20 @@
 #pragma once
+
+#include <Windows.h>
+#include <ode\threading.h>
+#include <ode\threading_impl.h>
 #include <osgViewer/Viewer>
 #include <osgUtil/Optimizer>
 #include <osgDB/ReadFile>
 #include <osg/ShapeDrawable>
 #include <osgGA/TrackballManipulator>
 
-//#ifndef dDOUBLE
-//#define dDOUBLE
-//#endif
-#include <ode/ode.h>
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#include <ode\ode.h>
+#include <ode\common.h>
+#include <ode\odemath.h> 
 #include <MB/cube.h>
 #include <MB/infiniteplane.hpp>
 #include <MB/mouseeventhandler.hpp>
@@ -51,7 +57,7 @@ class Application
 
 	//Solver specifics
 	dThreadingImplementationID pSolverThreading;
-	dThreadingThreadPoolID pSolverThreadPool;
+	dThreadingThreadPoolID pSolverThreadPool; 
 	const int nIterSteps = 20;
 	const dReal stepSize = 0.05;
 

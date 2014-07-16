@@ -1,7 +1,9 @@
 #pragma once
-//#ifndef dDOUBLE
-//#define dDOUBLE
-//#endif
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+
+#include <Windows.h>
 #include <ode/ode.h>
 #include <osg/ShapeDrawable>
 #include <osg/Geode>

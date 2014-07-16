@@ -9,6 +9,7 @@
 #ifndef MoonBase_loadedobject_hpp
 #define MoonBase_loadedobject_hpp
 
+#include <Windows.h>
 #include <string>
 #include <MB/moonbaseobject.hpp>
 

@@ -9,6 +9,7 @@
 #ifndef MoonBase_findnodevisitor_hpp
 #define MoonBase_findnodevisitor_hpp
 
+#include <Windows.h>
 #include <osg/NodeVisitor>
 #include <osg/Node>
 

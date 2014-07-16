@@ -9,6 +9,7 @@
 #ifndef MoonBase_infiniteplane_hpp
 #define MoonBase_infiniteplane_hpp
 
+#include <Windows.h>
 #include <ode/ode.h>
 #include <osg/Shape>
 

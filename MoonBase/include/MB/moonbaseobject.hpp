@@ -9,6 +9,11 @@
 #ifndef MoonBase_moonbaseobject_hpp
 #define MoonBase_moonbaseobject_hpp
 
+#ifndef dSINGLE
+#define dSINGLE
+#endif
+
+#include <Windows.h>
 #include <ode/ode.h>
 #include <osg/Shape>
 #include <osg/ShapeDrawable>
