@@ -120,6 +120,7 @@ void Application::renderLoop() {
 
 		//Update our cube position
 		cube->update();
+        loadedObject->update();
 
 		//Renders frame
 		viewer.frame();
@@ -132,6 +133,7 @@ void Application::populateScene() {
 	cube = new Cube(pWorld, pSpace, 1);
     plane = new InfinitePlane(pSpace);
     loadedObject = new LoadedObject(pWorld, pSpace, "../res/hex.osgt");
+//    loadedObject = new LoadedObject(pWorld, pSpace, "../res/MarsSurface.osgt");
 
 
 	//Place and set the cube
@@ -140,7 +142,7 @@ void Application::populateScene() {
 
 
     //Place the hexagon
-    loadedObject->setPosition(0, 10, 0);
+    loadedObject->setPosition(0, 10, 2);
 
     //Add to root
     root = new osg::Group;

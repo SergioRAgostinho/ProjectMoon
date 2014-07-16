@@ -50,6 +50,9 @@ public:
 
     //Set the object position
     void setPosition(double x, double y, double z);
+
+    //Update position and orientation
+	void update();
 };
 
 

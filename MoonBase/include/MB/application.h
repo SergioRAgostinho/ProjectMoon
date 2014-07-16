@@ -55,9 +55,6 @@ class Application
 	const int nIterSteps = 20;
 	const dReal stepSize = 0.05;
 
-	////Model loading
-	//osg::ref_ptr<osg::Node> loadedModel;
-
 	/////////////////////////////////////
 	// Methods
 	/////////////////////////////////////

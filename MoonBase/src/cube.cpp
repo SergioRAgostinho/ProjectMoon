@@ -40,23 +40,10 @@ Cube::~Cube()
 
 osg::Group* Cube::osgGet() { return gGroup.get(); }
 
-
-
 void Cube::setOrientationQuat(double x, double y, double z, double w) {
 	gPAT->setAttitude(osg::Quat(x, y, z, w));
 	dQuaternion q = { (dReal) w, (dReal) x, (dReal) y, (dReal) z };
 	dGeomSetQuaternion(pGeom, q);
-}
-
-void Cube::update() {
-	//Update position
-	const dReal* pos = dGeomGetPosition(pGeom);
-	gPAT->setPosition(osg::Vec3(*pos, *(pos + 1), *(pos + 2)));
-
-	//Update orientation
-	dQuaternion q;
-	dGeomGetQuaternion(pGeom, q);
-	gPAT->setAttitude(osg::Quat(q[1], q[2], q[3], q[0]));
 }
 
 void Cube::setAngularVelocity(double x, double y, double z) { dBodySetAngularVel(pBody, x, y, z); }

@@ -33,3 +33,14 @@ void MoonBaseObject::setPosition(double x, double y, double z) {
 	gPAT->setPosition(osg::Vec3(x, y, z));
 	dGeomSetPosition(pGeom, (dReal) x, (dReal) y, (dReal) z);
 }
+
+void MoonBaseObject::update() {
+	//Update position
+	const dReal* pos = dGeomGetPosition(pGeom);
+	gPAT->setPosition(osg::Vec3(*pos, *(pos + 1), *(pos + 2)));
+
+	//Update orientation
+	dQuaternion q;
+	dGeomGetQuaternion(pGeom, q);
+	gPAT->setAttitude(osg::Quat(q[1], q[2], q[3], q[0]));
+}

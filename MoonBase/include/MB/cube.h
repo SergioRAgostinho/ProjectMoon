@@ -35,9 +35,6 @@ public:
 	//Set the object position
 	void setOrientationQuat(double x, double y, double z, double w);
 
-	//Update position and orientation
-	void update();
-
 	//Set angular velocity
 	void setAngularVelocity(double x, double y, double z);
 };

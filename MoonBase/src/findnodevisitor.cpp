@@ -25,6 +25,12 @@ void FindNodeVisitor::apply(osg::Node &searchNode) {
 }
 
 
-osg::Node* FindNodeVisitor::getFirst() { return foundNodeList.front(); }
+osg::Node* FindNodeVisitor::getFirst() {
+    //test if the array is filled otherwise return null
+    if (foundNodeList.empty())
+        return nullptr;
+    else
+        return foundNodeList.front();
+}
 
 std::vector<osg::Node*>& FindNodeVisitor::getNodeList() { return foundNodeList; }
