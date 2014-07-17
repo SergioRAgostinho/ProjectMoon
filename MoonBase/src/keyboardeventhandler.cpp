@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <MB/keyboardeventhandler.h>
+#include <MB/utils.hpp>
 
 using namespace mb;
 
@@ -21,7 +22,9 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
             switch (ea.getKey()) {
                 case 'r':
                 case 'R':
-                    body->setPosition(0, 0, 2);
+                    body->setPosition(0, 0, 60);
+                    body->setLinearVelocity(uniRand(-10, 10),uniRand(-10, 10),uniRand(-10, 10));
+                    body->setAngularVelocity(uniRand(-1, 1),uniRand(-1, 1),uniRand(-1, 1));
                     break;
                 default:
                     break;

@@ -25,6 +25,8 @@ namespace mb {
         //    osg::ref_ptr<osg::Group> gGroup = new osg::Group();
 
     public:
+
+        Cube();
         Cube(dWorldID w, dSpaceID s, dReal size);
         
     };

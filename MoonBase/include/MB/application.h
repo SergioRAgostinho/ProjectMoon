@@ -14,6 +14,8 @@
 #include <MB/mouseeventhandler.h>
 #include <MB/loader.h>
 
+#define N_CUBES 50
+
 class Application
 {
 	/////////////////////
@@ -33,10 +35,9 @@ class Application
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-    mb::Cube* cube;
-    mb::InfinitePlane* plane;
-    mb::Loader* loader;
-    mb::Body* hex;
+    mb::Cube cubes[N_CUBES];
+    mb::Loader* loader, *loader2;
+    mb::Body *marsSurface, *moscatel;
 
 
 	////////////////////////

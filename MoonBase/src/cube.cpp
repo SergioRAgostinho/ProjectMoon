@@ -2,6 +2,14 @@
 
 using namespace mb;
 
+Cube::Cube()
+{
+	//Graphics
+	osg::ref_ptr<osg::Box> gBox = new osg::Box(osg::Vec3(0, 0, 0), 1);
+	osg::ref_ptr<osg::ShapeDrawable>  gBoxShape = new osg::ShapeDrawable(gBox.get());
+	gGeode->addDrawable(gBoxShape);
+}
+
 Cube::Cube(dWorldID w, dSpaceID s, dReal size)
 {
     pWorld = w;

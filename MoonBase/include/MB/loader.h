@@ -17,11 +17,6 @@ namespace mb {
 
     class Loader : public Object {
 
-
-    protected:
-
-        bool triOGS2ODE();
-
     public:
 
         Loader(const std::string& path);

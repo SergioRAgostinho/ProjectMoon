@@ -12,6 +12,7 @@
 #include <osgGA/GUIEventHandler>
 #include <MB/body.h>
 
+
 namespace mb {
 
     class KeyboardEventHandler : public osgGA::GUIEventHandler {

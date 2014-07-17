@@ -6,7 +6,8 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
-
+#include <time.h>
+#include <iostream>
 #include <MB/body.h>
 
 using namespace mb;
@@ -46,13 +47,25 @@ Body::~Body() {
     delete [] pIdx;
 }
 
+void Body::initCollision(dSpaceID space) {
+    pSpace = space;
+    triOGS2ODE();
+}
+
 void Body::initPhysics(dWorldID world, dSpaceID space) {
     pWorld = world;
-    pSpace = space;
+    initCollision(space);
 
-    triOGS2ODE();
+    dMass mass;
+    initMass(&mass);
     pBody = dBodyCreate(pWorld);
+    dBodySetMass(pBody, &mass);
+
     dGeomSetBody(pGeom, pBody);
+}
+
+void Body::initMass(dMass* mass) {
+    dMassSetBoxTotal(mass, 10, 10, 10, 10);
 }
 
 osg::Geode* Body::getGeode() { return gGeode.get(); }
@@ -69,9 +82,50 @@ void Body::setSpace(dSpaceID space) {
     pSpace = space;
 }
 
+//Get angular velocity
+void Body::getAngularVelocity(double* av) {
+    if (pBody) {
+        const dReal* temp;
+        temp = dBodyGetAngularVel(pBody);
+        *(av) = (double) *temp;
+        *(av + 1) = (double) *(temp + 1);
+        *(av + 2) = (double) *(temp + 2);
+    }
+}
+
+//Get linear velocity
+void Body::getLinearVelocity(double* lv) {
+    if (pBody) {
+        const dReal* temp;
+        temp = dBodyGetLinearVel(pBody);
+        *(lv) = (double) *temp;
+        *(lv + 1) = (double) *(temp + 1);
+        *(lv + 2) = (double) *(temp + 2);
+    }
+}
+
+//Set angular velocity
+double Body::getAngularSpeed() {
+    double av[3] = {};
+    getAngularVelocity(&av[0]);
+    return sqrt(av[0] * av[0] + av[1] * av[1] + av[2] * av[2]);
+};
+
+//Set linear velocity
+double Body::getLinearSpeed() {
+    double lv[3] = {};
+    getLinearVelocity(&lv[0]);
+    return sqrt(lv[0] * lv[0] + lv[1] * lv[1] + lv[2] * lv[2]);
+};
+
 void Body::setAngularVelocity(double x, double y, double z) {
     if(pBody)
         dBodySetAngularVel(pBody, x, y, z);
+}
+
+void Body::setLinearVelocity(double x, double y, double z) {
+    if(pBody)
+        dBodySetLinearVel(pBody, x, y, z);
 }
 
 void Body::setOrientationQuat(double x, double y, double z, double w) {
@@ -91,7 +145,7 @@ void Body::setPosition(double x, double y, double z) {
 void Body::update() {
 
     //if no geometry has been assigned just exit
-    if(!pGeom)
+    if(!(pBody && pGeom))
         return;
 
 	//Update position
@@ -117,6 +171,11 @@ bool Body::triOGS2ODE() {
     pIdx = new dTriIndex[nVerts]();
 
     int uniqueVerts = 0;
+
+
+    time_t start = time(0);
+
+
 
     //Worst case - n(n-1) runs
     for (int i = 0; i < nVerts; ++i) {
@@ -159,6 +218,11 @@ bool Body::triOGS2ODE() {
 
     pGeom = dCreateTriMesh(pSpace, pMeshData, 0, 0, 0);
     dGeomSetData(pGeom, pMeshData);
+
+    double seconds_since_start = difftime( time(0), start);
+    std::cout << "[DEBUG] Took " << seconds_since_start
+                << " seconds to parse a vertex array with " << nVerts
+                << " elements" << std::endl;
     
     return true;
 }

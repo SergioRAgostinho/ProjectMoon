@@ -24,6 +24,9 @@ namespace mb {
         //Converter between OSG and ODE
         bool triOGS2ODE();
 
+        //Initialize mass
+        void initMass(dMass* mass);
+
     protected:
 
         //Physic engine identities
@@ -51,11 +54,26 @@ namespace mb {
         //Deconstructor afterparty
         ~Body();
 
+        //Initialize only the collision geometry
+        void initCollision(dSpaceID space);
+
         //Initialize physics
         void initPhysics(dWorldID world, dSpaceID space);
 
         //return the Geode pointer
         osg::Geode* getGeode();
+
+        //Set angular velocity
+        void getAngularVelocity(double* av);
+
+        //Set linear velocity
+        void getLinearVelocity(double* lv);
+
+        //Set angular velocity
+        double getAngularSpeed();
+
+        //Set linear velocity
+        double getLinearSpeed();
 
         //Set the geode
         void setGeode(osg::Geode* geode);
@@ -68,6 +86,9 @@ namespace mb {
 
         //Set angular velocity
         void setAngularVelocity(double x, double y, double z);
+
+        //Set linear velocity
+        void setLinearVelocity(double x, double y, double z);
 
         //Set Orientation
         void setOrientationQuat(double x, double y, double z, double w);
