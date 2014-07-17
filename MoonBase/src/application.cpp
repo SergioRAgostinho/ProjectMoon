@@ -1,6 +1,6 @@
 
 #include <MB/application.h>
-#include <MB/keyboardeventhandler.hpp>
+#include <MB/keyboardeventhandler.h>
 
 
 Application::Application()
@@ -14,6 +14,8 @@ Application::~Application()
 	//FIXME
 	delete cube;
     delete plane;
+    delete loader;
+    delete hex;
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -107,6 +109,8 @@ void Application::renderLoop() {
     camManip = new osgGA::TrackballManipulator();
 	viewer.setCameraManipulator(camManip);
 
+    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(-M_PI/6.0, 1, 0, 0 ) * osg::Matrix::translate(0, -10, 6) );
+
 
 	while (!viewer.done())
 	{
@@ -117,6 +121,7 @@ void Application::renderLoop() {
 
 		//Update our cube position
 		cube->update();
+        hex->update();
 
 		//Renders frame
 		viewer.frame();
@@ -126,20 +131,31 @@ void Application::renderLoop() {
 
 void Application::populateScene() {
 
-	cube = new Cube(pWorld, pSpace, 1);
-    plane = new InfinitePlane(pWorld,pSpace);
-	root = new osg::Group;
-	root->addChild(cube->getPAT());
-    //root->addChild(cube->osgGet());
-    root->addChild(plane->getGeode());
-	viewer.setSceneData(root.get());
+	cube = new mb::Cube(pWorld, pSpace, 1);
+    plane = new mb::InfinitePlane(pSpace);
+    loader = new mb::Loader("../res/models/hex.osgt");
+//    loadedObject = new LoadedObject(pWorld, pSpace, "../res/models/MarsSurface.osgt");
+
 
 	//Place and set the cube
 	cube->setAngularVelocity(0, 0, 0.1);
     cube->setPosition(0, 0, 1);
 
+
+    //Place the hexagon
+    hex = new mb::Body(dynamic_cast<osg::Geode*>(loader->getNode("pCube1-GEODE")));
+    hex->initPhysics(pWorld, pSpace);
+    hex->setPosition(0, 10, 2);
+
+    //Add to root
+    root = new osg::Group;
+	root->addChild(cube->getPAT());
+    root->addChild(plane->getGeode());
+    root->addChild(hex->getPAT());
+    viewer.setSceneData(root.get());
+
     //Subscribe object
-    viewer.addEventHandler(new KeyboardEventHandler(cube));
+    viewer.addEventHandler(new mb::KeyboardEventHandler(cube));
 }
 
 void Application::setGraphicsContext() {
@@ -175,5 +191,7 @@ void Application::setGraphicsContext() {
 	// add this slave camera to the viewer, with a shift left of the projection matrix
 	viewer.addSlave(cameraR.get(), osg::Matrixd::translate(-.06, 0, 0), osg::Matrixd());
 
+    //Place the camera
+    cameraL->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
 
 }

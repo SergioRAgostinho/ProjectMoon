@@ -10,8 +10,9 @@
 //#endif
 #include <ode/ode.h>
 #include <MB/cube.h>
-#include <MB/infiniteplane.hpp>
-#include <MB/mouseeventhandler.hpp>
+#include <MB/infiniteplane.h>
+#include <MB/mouseeventhandler.h>
+#include <MB/loader.h>
 
 class Application
 {
@@ -32,8 +33,11 @@ class Application
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-	Cube* cube;
-    InfinitePlane* plane;
+    mb::Cube* cube;
+    mb::InfinitePlane* plane;
+    mb::Loader* loader;
+    mb::Body* hex;
+
 
 	////////////////////////
 	// ODE (physics)
@@ -51,9 +55,6 @@ class Application
 	dThreadingThreadPoolID pSolverThreadPool;
 	const int nIterSteps = 20;
 	const dReal stepSize = 0.05;
-
-	////Model loading
-	//osg::ref_ptr<osg::Node> loadedModel;
 
 	/////////////////////////////////////
 	// Methods

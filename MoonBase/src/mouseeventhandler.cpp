@@ -6,10 +6,11 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
-#include <MB/mouseeventhandler.hpp>
+#include <MB/mouseeventhandler.h>
 
 MouseEventHandler::MouseEventHandler(osg::Camera* cam) :  camera(cam) {}
 
+//FIXME: Locking behavior. Conflitc between camera manipulator and the object manipulator
 bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa, osg::Object * object, osg::NodeVisitor * node) {
     
     osgViewer::View* view = dynamic_cast<osgViewer::View*>(&aa);
