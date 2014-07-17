@@ -6,15 +6,20 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
-#include <MB/infiniteplane.hpp>
+#include <osg/Geometry>
+#include <MB/infiniteplane.h>
 
-InfinitePlane::InfinitePlane(dSpaceID pSpace)
+using namespace mb;
+
+InfinitePlane::InfinitePlane(dSpaceID space)
 {
     //ODE
+    pSpace = space;
 	pGeom = dCreatePlane(pSpace, 0, 0, 1, 0);
-    MoonBaseObject::pSpace = pSpace;
 
     //OSG
+    osg::Geometry* gGeometry = new osg::Geometry();
+
     //Vertice array
     double const size = 2;
     osg::Vec3Array* verts = new osg::Vec3Array();
@@ -41,6 +46,8 @@ InfinitePlane::InfinitePlane(dSpaceID pSpace)
     gGeometry->setColorArray(colors);
     gGeometry->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
 
+    //Add to be rendered
+    gGeode->addDrawable(gGeometry);
 }
 
 

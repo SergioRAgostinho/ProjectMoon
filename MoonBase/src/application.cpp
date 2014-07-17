@@ -1,6 +1,6 @@
 
 #include <MB/application.h>
-#include <MB/keyboardeventhandler.hpp>
+#include <MB/keyboardeventhandler.h>
 
 
 Application::Application()
@@ -14,7 +14,8 @@ Application::~Application()
 	//FIXME
 	delete cube;
     delete plane;
-    delete loadedObject;
+    delete loader;
+    delete hex;
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -120,7 +121,7 @@ void Application::renderLoop() {
 
 		//Update our cube position
 		cube->update();
-        loadedObject->update();
+        hex->update();
 
 		//Renders frame
 		viewer.frame();
@@ -130,10 +131,10 @@ void Application::renderLoop() {
 
 void Application::populateScene() {
 
-	cube = new Cube(pWorld, pSpace, 1);
-    plane = new InfinitePlane(pSpace);
-    loadedObject = new LoadedObject(pWorld, pSpace, "../res/hex.osgt");
-//    loadedObject = new LoadedObject(pWorld, pSpace, "../res/MarsSurface.osgt");
+	cube = new mb::Cube(pWorld, pSpace, 1);
+    plane = new mb::InfinitePlane(pSpace);
+    loader = new mb::Loader("../res/models/hex.osgt");
+//    loadedObject = new LoadedObject(pWorld, pSpace, "../res/models/MarsSurface.osgt");
 
 
 	//Place and set the cube
@@ -142,17 +143,19 @@ void Application::populateScene() {
 
 
     //Place the hexagon
-    loadedObject->setPosition(0, 10, 2);
+    hex = new mb::Body(dynamic_cast<osg::Geode*>(loader->getNode("pCube1-GEODE")));
+    hex->initPhysics(pWorld, pSpace);
+    hex->setPosition(0, 10, 2);
 
     //Add to root
     root = new osg::Group;
 	root->addChild(cube->getPAT());
     root->addChild(plane->getGeode());
-    root->addChild(loadedObject->getPAT());
+    root->addChild(hex->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object
-    viewer.addEventHandler(new KeyboardEventHandler(cube));
+    viewer.addEventHandler(new mb::KeyboardEventHandler(cube));
 }
 
 void Application::setGraphicsContext() {

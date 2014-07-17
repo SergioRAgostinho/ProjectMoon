@@ -10,9 +10,9 @@
 //#endif
 #include <ode/ode.h>
 #include <MB/cube.h>
-#include <MB/infiniteplane.hpp>
-#include <MB/mouseeventhandler.hpp>
-#include <MB/loadedobject.hpp>
+#include <MB/infiniteplane.h>
+#include <MB/mouseeventhandler.h>
+#include <MB/loader.h>
 
 class Application
 {
@@ -33,9 +33,10 @@ class Application
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-	Cube* cube;
-    InfinitePlane* plane;
-    LoadedObject* loadedObject;
+    mb::Cube* cube;
+    mb::InfinitePlane* plane;
+    mb::Loader* loader;
+    mb::Body* hex;
 
 
 	////////////////////////

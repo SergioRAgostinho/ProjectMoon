@@ -6,7 +6,9 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
-#include <MB/findnodevisitor.hpp>
+#include <MB/findnodevisitor.h>
+
+using namespace mb;
 
 FindNodeVisitor::FindNodeVisitor(){
     FindNodeVisitor("");

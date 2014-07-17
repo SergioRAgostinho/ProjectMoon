@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
-#include <MB/mouseeventhandler.hpp>
+#include <MB/mouseeventhandler.h>
 
 MouseEventHandler::MouseEventHandler(osg::Camera* cam) :  camera(cam) {}
 

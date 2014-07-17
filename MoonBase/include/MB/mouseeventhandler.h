@@ -6,8 +6,8 @@
 //  Copyright (c) 2014 WeShallExplode. All rights reserved.
 //
 
-#ifndef MoonBase_mouseeventhandler_hpp
-#define MoonBase_mouseeventhandler_hpp
+#ifndef MoonBase_mouseeventhandler_h
+#define MoonBase_mouseeventhandler_h
 
 #include <osgGA/GUIEventHandler>
 #include <osgViewer/View>

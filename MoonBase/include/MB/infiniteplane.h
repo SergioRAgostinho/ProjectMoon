@@ -10,23 +10,20 @@
 #define MoonBase_infiniteplane_hpp
 
 #include <ode/ode.h>
-#include <osg/Shape>
 
-#include <MB/moonbaseobject.hpp>
+#include <MB/body.h>
+
+namespace mb {
+    class InfinitePlane : public Body {
 
 
-class InfinitePlane : public MoonBaseObject {
+    public:
 
+        //Constructor
+        InfinitePlane(dSpaceID space);
+        
+    };
 
-public:
-
-    //osg Infinite plane specefic
-	osg::ref_ptr<osg::InfinitePlane> gShape;
-
-    //Constructor
-    InfinitePlane(dSpaceID pSpace);
-
-};
-
+}
 
 #endif
