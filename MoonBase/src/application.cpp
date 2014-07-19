@@ -20,6 +20,7 @@ Application::~Application()
     delete loader2;
     delete marsSurface;
     delete moscatel;
+//    delete moscatelClone;
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -74,8 +75,8 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
             contact[i].surface.mu = dInfinity;
             contact[i].surface.mu2 = 0;
             contact[i].surface.bounce = 0.1;
-            contact[i].surface.bounce_vel = 0.1;
-            contact[i].surface.soft_cfm = 0.01;
+            contact[i].surface.bounce_vel = 0.01;
+            contact[i].surface.soft_cfm = 0.001;
 			dJointID c = dJointCreateContact(app->pWorld, app->pCollisionJG, contact + i);
 			dJointAttach(c, dGeomGetBody(o1), dGeomGetBody(o2));
 		}
@@ -88,8 +89,6 @@ void Application::setPhysics() {
 	dWorldSetGravity(pWorld, 0, 0, -9.81);
 	dWorldSetCFM(pWorld, 1e-10);
 	dWorldSetERP(pWorld, 0.8);
-//    dWorldSetCFM(pWorld, 1e-10);
-//	dWorldSetERP(pWorld, 0.6);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
 
 	//Create space for establising collision domain
@@ -110,7 +109,6 @@ void Application::setPhysics() {
 void Application::renderLoop() {
 
     camManip = new osgGA::TrackballManipulator();
-//    camManip = new osgGA::FirstPersonManipulator();
 	viewer.setCameraManipulator(camManip);
 
     camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
@@ -123,7 +121,7 @@ void Application::renderLoop() {
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
 
-		//Update our cube position
+		//Update our objects
         for (int i = 0; i < N_CUBES; ++i) {
             cubes[i].update();
             if (cubes[i].getLinearSpeed() < 0.01 && cubes[i].getAngularSpeed()< 0.01) {
@@ -132,6 +130,23 @@ void Application::renderLoop() {
                 cubes[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
             }
         }
+        moscatel->update();
+        if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
+            moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
+            moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
+            moscatel->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+        }
+
+        //Update our objects
+        for (int i = 0; i < N_BOTTLES; ++i) {
+            moscatelClone[i].update();
+            if (moscatelClone[i].getLinearSpeed() < 0.01 && moscatelClone[i].getAngularSpeed()< 0.01) {
+                moscatelClone[i].setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
+                moscatelClone[i].setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
+                moscatelClone[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+            }
+        }
+
 
 		//Renders frame
 		viewer.frame();
@@ -148,6 +163,7 @@ void Application::populateScene() {
 	//Place and set the cube
     for (int i = 0; i < N_CUBES; ++i) {
         cubes[i] = mb::Cube(pWorld, pSpace, 10);
+        cubes[i].setTotalMass(10);
         cubes[i].setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
         cubes[i].setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
         cubes[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
@@ -159,8 +175,18 @@ void Application::populateScene() {
     marsSurface->initCollision(pSpace);
 
     moscatel = new mb::Body(dynamic_cast<osg::Geode*>(loader2->getNode("pCylinder1-GEODE")));
-    moscatel->initCollision(pSpace);
+    moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
+
+    for (int i = 0; i < N_BOTTLES; ++i) {
+        moscatelClone[i] = *(moscatel->clone());
+        moscatelClone[i].setTotalMass(10);
+        moscatelClone[i].setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
+        moscatelClone[i].setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
+        moscatelClone[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+    }
+
+
 
     //Add to root
     root = new osg::Group;
@@ -168,6 +194,8 @@ void Application::populateScene() {
         root->addChild(cubes[i].getPAT());
     root->addChild(marsSurface->getPAT());
     root->addChild(moscatel->getPAT());
+    for(int i = 0; i < N_BOTTLES; ++i)
+        root->addChild(moscatelClone[i].getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object

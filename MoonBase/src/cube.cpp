@@ -10,15 +10,10 @@ Cube::Cube()
 	gGeode->addDrawable(gBoxShape);
 }
 
-Cube::Cube(dWorldID w, dSpaceID s, dReal size)
+Cube::Cube(dWorldID w, dSpaceID s, dReal size) : Body(w,s)
 {
-    pWorld = w;
-    pSpace = s;
-
-	pBody = dBodyCreate(pWorld);
 	pGeom = dCreateBox(pSpace, (dReal)size, (dReal)size, (dReal)size);
-	dGeomSetBody(pGeom, pBody);
-	
+    initPhysics(w, s);
 
 	//Graphics
 	osg::ref_ptr<osg::Box> gBox = new osg::Box(osg::Vec3(0, 0, 0), (float) size);

@@ -32,9 +32,8 @@ void Body::initialize() {
     pMeshData = nullptr;
 }
 
-Body::Body(dWorldID w, dSpaceID s) {
+Body::Body(dWorldID w, dSpaceID s) : Object(new osg::Geode()) {
     initialize();
-    gNode = new osg::Geode();
     gGeode = gNode->asGeode();
     pWorld = w;
     pSpace = s;
@@ -47,25 +46,110 @@ Body::~Body() {
     delete [] pIdx;
 }
 
+//FIXME: we're gonna need smart pointers for this because if the original mb::Body gets destroyed, everything will fall through
+Body* Body::clone() {
+
+    //Clone OSG stuff
+    Body* out = new Body();
+    out->gGeode->addDrawable(gGeode->getDrawableList().front());
+    (out->gPAT)->setPosition(gPAT->getPosition());
+    (out->gPAT)->setAttitude(gPAT->getAttitude());
+    (out->gPAT)->setScale(gPAT->getScale());
+    (out->gPAT)->setPivotPoint(gPAT->getPivotPoint());
+
+    //Create geometry and body in the same collidable space and same world physics
+    out->pWorld = pWorld;
+    out->pSpace = pSpace;
+
+    //Clone geometry
+    if (pGeom) {
+        int gClass = dGeomGetClass(pGeom);
+        switch (gClass) {
+            case dBoxClass:
+                dReal size[3];
+                dGeomBoxGetLengths(pGeom, size);
+                out->pGeom = dCreateBox(pSpace, size[0], size[1], size[2]);
+                break;
+            case dTriMeshClass:
+                out->pGeom = dCreateTriMesh(pSpace, pMeshData, 0, 0, 0);
+                dGeomSetData(out->pGeom, pMeshData);
+                out->pMeshData = pMeshData;
+                out->pVerts = pVerts;
+                out->pIdx = pIdx;
+                break;
+            default:
+                break;
+        }
+    }
+
+    //Create body
+    if (pBody) {
+        out->pBody = dBodyCreate(pWorld);
+        dMass mass;
+        dBodyGetMass(pBody, &mass);
+        dBodySetMass(out->pBody, &mass);
+        dGeomSetBody(out->pGeom, out->pBody);
+    }
+
+    return out;
+}
+
 void Body::initCollision(dSpaceID space) {
     pSpace = space;
-    triOGS2ODE();
+    if(!pGeom)
+        triOGS2ODE();
 }
 
 void Body::initPhysics(dWorldID world, dSpaceID space) {
+    initPhysics(world, space, 1);
+}
+
+void Body::initPhysics(dWorldID world, dSpaceID space, double massAmount) {
     pWorld = world;
     initCollision(space);
 
     dMass mass;
-    initMass(&mass);
+    initMass(&mass, massAmount);
     pBody = dBodyCreate(pWorld);
     dBodySetMass(pBody, &mass);
 
     dGeomSetBody(pGeom, pBody);
 }
 
-void Body::initMass(dMass* mass) {
-    dMassSetBoxTotal(mass, 10, 10, 10, 10);
+void Body::initMass(dMass *mass) {
+    initMass(mass, 1);
+}
+void Body::initMass(dMass* mass, double amount) {
+
+    if (!pGeom)
+        return;
+
+    //Test for geometry class
+    int geomClass = dGeomGetClass(pGeom);
+    switch (geomClass) {
+        case dBoxClass:
+            dReal size[3];
+            dGeomBoxGetLengths(pGeom, size);
+            dMassSetBoxTotal(mass, amount, size[0], size[1], size[2]);
+            break;
+        case dTriMeshClass:
+            dMassSetTrimeshTotal(mass, amount, pGeom);
+            dMassTranslate( mass, -mass->c[0], -mass->c[1], -mass->c[2] );
+            //Not sure if i need to translate more stuff
+            break;
+        default:
+            break;
+    }
+
+}
+
+void Body::setTotalMass(double amount) {
+    if (!pBody)
+        return;
+
+    dMass mass;
+    dBodyGetMass(pBody, &mass);
+    dMassAdjust(&mass, amount);
 }
 
 osg::Geode* Body::getGeode() { return gGeode.get(); }

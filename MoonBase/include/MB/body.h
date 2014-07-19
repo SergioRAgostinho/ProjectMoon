@@ -26,6 +26,7 @@ namespace mb {
 
         //Initialize mass
         void initMass(dMass* mass);
+        void initMass(dMass* mass, double kg);
 
     protected:
 
@@ -54,11 +55,16 @@ namespace mb {
         //Deconstructor afterparty
         ~Body();
 
+        //return a clone/clones
+        Body* clone();
+        Body* clone(int nClones);
+
         //Initialize only the collision geometry
         void initCollision(dSpaceID space);
 
         //Initialize physics
         void initPhysics(dWorldID world, dSpaceID space);
+        void initPhysics(dWorldID world, dSpaceID space, double massAmount);
 
         //return the Geode pointer
         osg::Geode* getGeode();
@@ -95,6 +101,9 @@ namespace mb {
         
         //Set the object position
         void setPosition(double x, double y, double z);
+
+        //Adjust object mass
+        void setTotalMass(double amount);
         
         //Update position and orientation
         void update();
