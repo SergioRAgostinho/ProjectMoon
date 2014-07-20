@@ -9,6 +9,7 @@
 #include <time.h>
 #include <iostream>
 #include <MB/body.h>
+#include <MB/memory.h>
 
 using namespace mb;
 
@@ -42,8 +43,10 @@ Body::Body(dWorldID w, dSpaceID s) : Object(new osg::Geode()) {
 Body::~Body() {
 //    delete pBody;
 //    delete pGeom;
-    delete [] pVerts;
-    delete [] pIdx;
+//    delete [] pVerts;
+//    delete [] pIdx;
+    int a;
+    a++;
 }
 
 //FIXME: we're gonna need smart pointers for this because if the original mb::Body gets destroyed, everything will fall through
@@ -251,8 +254,8 @@ bool Body::triOGS2ODE() {
     osg::Vec3Array* array = dynamic_cast<osg::Vec3Array*>(geo->getVertexArray());
     unsigned int nVerts = array->getNumElements();
 
-    pVerts = new float[nVerts*3]();
-    pIdx = new dTriIndex[nVerts]();
+    float* tempPVerts = new float[nVerts*3]();
+    pIdx.reset(new dTriIndex[nVerts](),mb::array_deleter<dTriIndex>());
 
     int uniqueVerts = 0;
 
@@ -268,9 +271,9 @@ bool Body::triOGS2ODE() {
 
         //sweep odeVerts to check if it is a repeated vertex
         for (int j = 0; j < uniqueVerts; ++j) {
-            if ((pVerts[3*j] == vert.x()) && (pVerts[3*j + 1] == vert.y()) && (pVerts[3*j + 2] == vert.z())) {
+            if ((tempPVerts[3*j] == vert.x()) && (tempPVerts[3*j + 1] == vert.y()) && (tempPVerts[3*j + 2] == vert.z())) {
                 repeated = true;
-                pIdx[i] = j;
+                *(pIdx.get() + i) = j;
                 break;
             }
         }
@@ -280,25 +283,23 @@ bool Body::triOGS2ODE() {
             continue;
         }
 
-        pIdx[i] = uniqueVerts;
-        pVerts[3*uniqueVerts] = vert.x();
-        pVerts[3*uniqueVerts + 1] = vert.y();
-        pVerts[3*(uniqueVerts++) + 2] = vert.z();
+        *(pIdx.get() + i) = uniqueVerts;
+        tempPVerts[3*uniqueVerts] = vert.x();
+        tempPVerts[3*uniqueVerts + 1] = vert.y();
+        tempPVerts[3*(uniqueVerts++) + 2] = vert.z();
     }
 
     //delete unnecessary space
-    float temp[3*uniqueVerts];
-    memcpy(temp,pVerts,sizeof(temp));
-    delete pVerts;
-    pVerts = new float[3*uniqueVerts]();
-    memcpy(pVerts, temp, sizeof(temp));
+    pVerts.reset(new float[3*uniqueVerts](),mb::array_deleter<float>());
+    memcpy(pVerts.get(),tempPVerts,3*uniqueVerts * sizeof(float));
+    delete tempPVerts;
 
 
     //    dTriMeshDataID new_tmdata = dGeomTriMeshDataCreate();
     pMeshData = dGeomTriMeshDataCreate();
 
     //FIXME: Use dGeomTriMeshDataBuildSingle1 and provide also the normals for improved behavior in trimesh-trimesh collision
-    dGeomTriMeshDataBuildSingle(pMeshData, pVerts, 3 * sizeof(float), uniqueVerts, (dTriIndex*)pIdx, nVerts, 3 * sizeof(dTriIndex));
+    dGeomTriMeshDataBuildSingle(pMeshData, pVerts.get(), 3 * sizeof(float), uniqueVerts, (dTriIndex*)pIdx.get(), nVerts, 3 * sizeof(dTriIndex));
 
     pGeom = dCreateTriMesh(pSpace, pMeshData, 0, 0, 0);
     dGeomSetData(pGeom, pMeshData);
@@ -307,6 +308,7 @@ bool Body::triOGS2ODE() {
     std::cout << "[DEBUG] Took " << seconds_since_start
                 << " seconds to parse a vertex array with " << nVerts
                 << " elements" << std::endl;
+
     
     return true;
 }

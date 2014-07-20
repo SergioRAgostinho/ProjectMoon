@@ -20,7 +20,7 @@ Application::~Application()
     delete loader2;
     delete marsSurface;
     delete moscatel;
-//    delete moscatelClone;
+
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -139,11 +139,11 @@ void Application::renderLoop() {
 
         //Update our objects
         for (int i = 0; i < N_BOTTLES; ++i) {
-            moscatelClone[i].update();
-            if (moscatelClone[i].getLinearSpeed() < 0.01 && moscatelClone[i].getAngularSpeed()< 0.01) {
-                moscatelClone[i].setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-                moscatelClone[i].setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-                moscatelClone[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+            moscatelClone[i]->update();
+            if (moscatelClone[i]->getLinearSpeed() < 0.01 && moscatelClone[i]->getAngularSpeed()< 0.01) {
+                moscatelClone[i]->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
+                moscatelClone[i]->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
+                moscatelClone[i]->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
             }
         }
 
@@ -171,19 +171,20 @@ void Application::populateScene() {
 
 
     //Place the hexagon
-    marsSurface = new mb::Body(dynamic_cast<osg::Geode*>(loader->getNode("planetSurface-GEODE")));
+    osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
+    marsSurface = new mb::Body(surface.get());
     marsSurface->initCollision(pSpace);
 
-    moscatel = new mb::Body(dynamic_cast<osg::Geode*>(loader2->getNode("pCylinder1-GEODE")));
+    moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
     moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
 
     for (int i = 0; i < N_BOTTLES; ++i) {
-        moscatelClone[i] = *(moscatel->clone());
-        moscatelClone[i].setTotalMass(10);
-        moscatelClone[i].setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-        moscatelClone[i].setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-        moscatelClone[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+        moscatelClone[i] = moscatel->clone();
+        moscatelClone[i]->setTotalMass(10);
+        moscatelClone[i]->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
+        moscatelClone[i]->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
+        moscatelClone[i]->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
     }
 
 
@@ -195,7 +196,7 @@ void Application::populateScene() {
     root->addChild(marsSurface->getPAT());
     root->addChild(moscatel->getPAT());
     for(int i = 0; i < N_BOTTLES; ++i)
-        root->addChild(moscatelClone[i].getPAT());
+        root->addChild(moscatelClone[i]->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object

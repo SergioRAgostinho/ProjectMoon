@@ -16,6 +16,7 @@
 #include <osg/PositionAttitudeTransform>
 #include <osg/Geode>
 #include <MB/object.h>
+#include <memory>
 
 namespace mb {
     
@@ -35,8 +36,11 @@ namespace mb {
         dGeomID pGeom;
         dWorldID pWorld;
         dSpaceID pSpace;
-        float* pVerts;
-        dTriIndex* pIdx;
+//        float* pVerts;
+//        dTriIndex* pIdx;
+        std::shared_ptr<float> pVerts;
+        std::shared_ptr<dTriIndex> pIdx;
+
         dTriMeshDataID pMeshData;
 
         //Open Scene Graph
