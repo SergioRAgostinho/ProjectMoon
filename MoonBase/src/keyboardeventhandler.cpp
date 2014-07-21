@@ -26,6 +26,9 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
                     body->setLinearVelocity(uniRand(-10, 10),uniRand(-10, 10),uniRand(-10, 10));
                     body->setAngularVelocity(uniRand(-1, 1),uniRand(-1, 1),uniRand(-1, 1));
                     break;
+                case 't':
+                case 'T':
+                    body->toggleBB();
                 default:
                     break;
             }

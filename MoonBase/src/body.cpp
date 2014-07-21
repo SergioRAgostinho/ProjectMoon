@@ -10,17 +10,19 @@
 #include <iostream>
 #include <MB/body.h>
 #include <MB/memory.h>
+#include <osg/Shape>
+#include <osg/BlendFunc>
+#include <osg/StateSet>
+#include <osg/PolygonMode>
 
 using namespace mb;
 
 Body::Body() : Object(new osg::Geode()){
     initialize();
-    gGeode = gNode->asGeode();
 }
 
 Body::Body(osg::Geode* geode) : Object(geode) {
     initialize();
-    gGeode = gNode->asGeode();
 }
 
 void Body::initialize() {
@@ -31,23 +33,32 @@ void Body::initialize() {
     pVerts = nullptr;
     pIdx = nullptr;
     pMeshData = nullptr;
+
+    gGeode = gNode->asGeode();
+    gBB = new osg::Geode();
+    gBBState = false;
+
+    //bounding box stuff
+    osg::BoundingBox bb = gGeode->getBoundingBox();
+    osg::ref_ptr<osg::ShapeDrawable> drawable = new osg::ShapeDrawable(new osg::Box(bb.center(),bb.xMax() - bb.xMin(),bb.yMax() - bb.yMin(),bb.zMax() - bb.zMin()));
+    drawable->setColor(osg::Vec4(0,1,0,1));
+    gBB->addDrawable(drawable.get());
+
+
+    //Activate the transparency
+    osg::StateSet* set = gBB->getOrCreateStateSet();
+    osg::ref_ptr<osg::PolygonMode> polygonMode = new osg::PolygonMode();
+    polygonMode->setMode( osg::PolygonMode::FRONT_AND_BACK, osg::PolygonMode::LINE );
+    set->setAttributeAndModes( polygonMode.get(), osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
 }
 
 Body::Body(dWorldID w, dSpaceID s) : Object(new osg::Geode()) {
     initialize();
-    gGeode = gNode->asGeode();
     pWorld = w;
     pSpace = s;
 }
 
-Body::~Body() {
-//    delete pBody;
-//    delete pGeom;
-//    delete [] pVerts;
-//    delete [] pIdx;
-    int a;
-    a++;
-}
+Body::~Body() {}
 
 //FIXME: we're gonna need smart pointers for this because if the original mb::Body gets destroyed, everything will fall through
 Body* Body::clone() {
@@ -311,4 +322,13 @@ bool Body::triOGS2ODE() {
 
     
     return true;
+}
+
+void Body::toggleBB() {
+    if (gBBState)
+        gPAT->removeChild(gBB.get());
+    else
+        gPAT->addChild(gBB.get());
+
+    gBBState = !gBBState;
 }

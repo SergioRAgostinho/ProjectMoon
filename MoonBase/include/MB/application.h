@@ -36,10 +36,8 @@ class Application
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-    mb::Cube cubes[N_CUBES];
     mb::Loader* loader, *loader2;
     mb::Body *marsSurface, *moscatel;
-    mb::Body *moscatelClone[N_BOTTLES];
 
 
 	////////////////////////

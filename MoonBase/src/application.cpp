@@ -3,6 +3,7 @@
 #include <MB/application.h>
 #include <MB/keyboardeventhandler.h>
 #include <MB/utils.hpp>
+#include <MB/fpmanipulator.h>
 
 
 
@@ -109,6 +110,7 @@ void Application::setPhysics() {
 void Application::renderLoop() {
 
     camManip = new osgGA::TrackballManipulator();
+    camManip = new mb::FirstPersonManipulator();
 	viewer.setCameraManipulator(camManip);
 
     camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
@@ -122,14 +124,6 @@ void Application::renderLoop() {
 		dJointGroupEmpty(pCollisionJG);
 
 		//Update our objects
-        for (int i = 0; i < N_CUBES; ++i) {
-            cubes[i].update();
-            if (cubes[i].getLinearSpeed() < 0.01 && cubes[i].getAngularSpeed()< 0.01) {
-                cubes[i].setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-                cubes[i].setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-                cubes[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-            }
-        }
         moscatel->update();
         if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
             moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
@@ -137,16 +131,7 @@ void Application::renderLoop() {
             moscatel->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
         }
 
-        //Update our objects
-        for (int i = 0; i < N_BOTTLES; ++i) {
-            moscatelClone[i]->update();
-            if (moscatelClone[i]->getLinearSpeed() < 0.01 && moscatelClone[i]->getAngularSpeed()< 0.01) {
-                moscatelClone[i]->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-                moscatelClone[i]->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-                moscatelClone[i]->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-            }
-        }
-
+        
 
 		//Renders frame
 		viewer.frame();
@@ -159,17 +144,6 @@ void Application::populateScene() {
     loader = new mb::Loader("../res/models/MarsSurface.osgt");
     loader2 = new mb::Loader("../res/models/moscatel.osgt");
 
-
-	//Place and set the cube
-    for (int i = 0; i < N_CUBES; ++i) {
-        cubes[i] = mb::Cube(pWorld, pSpace, 10);
-        cubes[i].setTotalMass(10);
-        cubes[i].setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-        cubes[i].setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-        cubes[i].setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-    }
-
-
     //Place the hexagon
     osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
     marsSurface = new mb::Body(surface.get());
@@ -179,28 +153,14 @@ void Application::populateScene() {
     moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
 
-    for (int i = 0; i < N_BOTTLES; ++i) {
-        moscatelClone[i] = moscatel->clone();
-        moscatelClone[i]->setTotalMass(10);
-        moscatelClone[i]->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-        moscatelClone[i]->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-        moscatelClone[i]->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-    }
-
-
-
     //Add to root
     root = new osg::Group;
-    for (int i = 0; i < N_CUBES; ++i)
-        root->addChild(cubes[i].getPAT());
     root->addChild(marsSurface->getPAT());
     root->addChild(moscatel->getPAT());
-    for(int i = 0; i < N_BOTTLES; ++i)
-        root->addChild(moscatelClone[i]->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object
-    //viewer.addEventHandler(new mb::KeyboardEventHandler(cube));
+    viewer.addEventHandler(new mb::KeyboardEventHandler(moscatel));
 }
 
 void Application::setGraphicsContext() {
@@ -216,29 +176,18 @@ void Application::setGraphicsContext() {
 
 	gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
-	osg::ref_ptr<osg::Camera> cameraL = new osg::Camera;
-	cameraL->setGraphicsContext(gc.get());
-//	cameraL->setViewport(new osg::Viewport(0, 0, traits->width / 2.0, traits->height));
-    	cameraL->setViewport(new osg::Viewport(0, 0, traits->width , traits->height));
+	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+	camera->setGraphicsContext(gc.get());
+    camera->setViewport(new osg::Viewport(0, 0, traits->width , traits->height));
 	GLenum bufferL = traits->doubleBuffer ? GL_BACK : GL_FRONT;
-	cameraL->setDrawBuffer(bufferL);
-	cameraL->setReadBuffer(bufferL);
+	camera->setDrawBuffer(bufferL);
+	camera->setReadBuffer(bufferL);
 
 	// add this slave camera to the viewer, with a shift left of the projection matrix
-//	viewer.addSlave(cameraL.get(), osg::Matrixd::translate(0.06, 0, 0), osg::Matrixd());
-    	viewer.addSlave(cameraL.get());
+    viewer.addSlave(camera.get());
 
-//	osg::ref_ptr<osg::Camera> cameraR = new osg::Camera;
-//	cameraR->setGraphicsContext(gc.get());
-//	cameraR->setViewport(new osg::Viewport(traits->width / 2.0, 0, traits->width / 2.0, traits->height));
-//	GLenum bufferR = traits->doubleBuffer ? GL_BACK : GL_FRONT;
-//	cameraR->setDrawBuffer(bufferR);
-//	cameraR->setReadBuffer(bufferR);
-//
-//	// add this slave camera to the viewer, with a shift left of the projection matrix
-//	viewer.addSlave(cameraR.get(), osg::Matrixd::translate(-.06, 0, 0), osg::Matrixd());
 
     //Place the camera
-    cameraL->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
+    camera->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
 
 }
