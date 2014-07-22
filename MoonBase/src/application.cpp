@@ -109,8 +109,8 @@ void Application::setPhysics() {
 
 void Application::renderLoop() {
 
-    camManip = new osgGA::TrackballManipulator();
-//    camManip = new mb::FirstPersonManipulator();
+//    camManip = new osgGA::TrackballManipulator();
+    camManip = new mb::FirstPersonManipulator();
 	viewer.setCameraManipulator(camManip);
 
     camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
@@ -118,7 +118,7 @@ void Application::renderLoop() {
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
-        hideCursor();
+        //hideCursor();
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
@@ -160,7 +160,7 @@ void Application::populateScene() {
     //Add to root
     root = new osg::Group;
     root->addChild(marsSurface->getPAT());
-    //root->addChild(moscatel->getPAT());
+    root->addChild(moscatel->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object

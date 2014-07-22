@@ -45,13 +45,13 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         case osgGA::GUIEventAdapter::KEYDOWN :
         {
             switch (ea.getKey()) {
-                case 'z':
-                case 'Z':
+                case 'w':
+                case 'W':
                     _mouvement.set(_mouvement.x(), _mouvement.y(),-translationFactor);
                     return false;
                     break;
-                case 'q':
-                case 'Q':
+                case 'a':
+                case 'A':
                     _mouvement.set(-translationFactor, _mouvement.y(),_mouvement.z());
                     return false;
                     break;
@@ -71,13 +71,13 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         case osgGA::GUIEventAdapter::KEYUP :
         {
             switch (ea.getKey()) {
-                case 'z':
-                case 'Z':
+                case 'w':
+                case 'W':
                     if(_mouvement.z()==-translationFactor)_mouvement.set(_mouvement.x(), _mouvement.y(),0);
                     return false;
                     break;
-                case 'q':
-                case 'Q':
+                case 'a':
+                case 'A':
                     if(_mouvement.x()==-translationFactor)_mouvement.set(0, _mouvement.y(),_mouvement.z());
                     return false;
                     break;
@@ -97,43 +97,60 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         //handling mouse movement events
         case osgGA::GUIEventAdapter::MOVE:
         {
-            if(!blockUpdateForNextCall){
-                deltaRX += ea.getX() - _mouse.x();
-                deltaRY += ea.getY() - _mouse.y();
-            }
-            else{
-                blockUpdateForNextCall = false;
+
+            static bool doXPositionChange = false;
+            static bool doYPositionChange = false;
+            static double newReqXPosition = 0;
+            static double newReqYPosition = 0;
+            static double varX = 0;
+            static double varY = 0;
+
+            if (!(doXPositionChange && (std::abs(ea.getX() - _mouse.x()) >=  std::abs(ea.getX() - newReqXPosition)))) {
+                    varX = ea.getX() - _mouse.x();
+            } else {
+                //it warped
+                doXPositionChange = false;
             }
 
-                
-                double newMouseXPosition = ea.getX();
-                double newMouseYPosition = ea.getWindowHeight() - ea.getY();
-                
-                bool doPositionChange = false;
-                
-                if(ea.getX()<=offsetScreen){
-                    doPositionChange = true;
-                    newMouseXPosition = ea.getWindowWidth()-2*offsetScreen;
-                }
-                if(ea.getX()>(ea.getWindowWidth()-offsetScreen)){
-                    doPositionChange = true;
-                    newMouseXPosition = 2*offsetScreen;
-                }
-                if(ea.getY()<=offsetScreen){
-                    doPositionChange = true;
-                    newMouseYPosition = 2*offsetScreen;
-                }
-                if(ea.getY()>(ea.getWindowHeight()-offsetScreen)){
-                    doPositionChange = true;
-                    newMouseYPosition = ea.getWindowHeight()-2*offsetScreen;
-                }
-                
-                if(doPositionChange){
-                    us.requestWarpPointer(newMouseXPosition, newMouseYPosition);
-                    blockUpdateForNextCall = true;
-                }
-            
+            if (!(doYPositionChange && (std::abs(ea.getY() - _mouse.y()) >=  std::abs(ea.getY() - newReqYPosition)))) {
+                varY = ea.getY() - _mouse.y();
+            } else {
+                //it warped
+                doYPositionChange = false;
+            }
+
+            deltaRX += varX;
+            deltaRY += varY;
             _mouse.set(ea.getX(), ea.getY());
+
+
+            double newMouseXPosition = ea.getX();
+            double newMouseYPosition = ea.getY();
+                
+            if(ea.getX()<=offsetScreen){
+                doXPositionChange = true;
+                newMouseXPosition = ea.getWindowWidth()- 2*offsetScreen + ea.getX();
+            } else if(ea.getX()>(ea.getWindowWidth()-offsetScreen)){
+                doXPositionChange = true;
+                newMouseXPosition = ea.getX() - ea.getWindowWidth() + 2*offsetScreen;
+            }
+
+            if(ea.getY()<=offsetScreen){
+                doYPositionChange = true;
+                newMouseYPosition = ea.getWindowHeight()- 2*offsetScreen + ea.getY();
+            } else if(ea.getY()>(ea.getWindowHeight()-offsetScreen)){
+                doYPositionChange = true;
+                newMouseYPosition = ea.getY() - ea.getWindowHeight() + 2*offsetScreen;
+            }
+
+            if(doXPositionChange || doYPositionChange){
+
+                newReqXPosition = newMouseXPosition;
+                newReqYPosition = newMouseYPosition;
+                us.requestWarpPointer(newMouseXPosition, ea.getWindowHeight() - newMouseYPosition);
+                std::cout << newMouseXPosition << " " << newMouseYPosition << std::endl;
+
+            }
 
             return false;
 
@@ -166,7 +183,6 @@ void FirstPersonManipulator::setTransformation( const osg::Vec3d& eye, const osg
 
     //Fix vertical something
 
-    std::cout << "mouse set B transform" << std::endl;
 }
 
 void FirstPersonManipulator::getTransformation( osg::Vec3d& eye, osg::Quat& rotation ) const {
@@ -189,9 +205,6 @@ void FirstPersonManipulator::setByMatrix(const osg::Matrixd& matrix){
     _mouse = osg::Vec2d(_mouseCenterX,_mouseCenterY);
 
     //Fix vertical something
-
-    std::cout << "mouse set by matrix" << std::endl;
-
 };
 
 /** set the position of the matrix manipulator using a 4x4 Matrix.*/
@@ -207,12 +220,5 @@ osg::Matrixd FirstPersonManipulator::getMatrix() const {
 
 /** get the position of the manipulator as a inverse matrix of the manipulator, typically used as a model view matrix.*/
 osg::Matrixd FirstPersonManipulator::getInverseMatrix() const{
-
-//    static double deg = 0;
-//    osg::Quat q = osg::Quat(0,0,1, deg);
-//    deg += 0.001;
-//
-//    return osg::Matrixd::translate( -_eye ) * osg::Matrixd::rotate( q * _rotation.inverse() );
-
     return osg::Matrixd::translate( -_eye ) * osg::Matrixd::rotate(  _rotation.inverse() );
 };
