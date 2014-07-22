@@ -10,6 +10,7 @@
 #define MoonBase_fpmanipulator_h
 
 #include <osgGA/StandardManipulator>
+#include <osgViewer/GraphicsWindow>
 
 namespace mb {
     class FirstPersonManipulator : public osgGA::StandardManipulator {
@@ -19,7 +20,19 @@ namespace mb {
 
         osg::Vec2d _mouse;
 
+        osg::Vec3d _mouvement;
+        
+        double translationFactor;
+        double deltaTZ;
+        double deltaRX;
+        double deltaRY;
+        
+        double offsetScreen;
+        
+        bool blockUpdateForNextCall;
+        
     public:
+        FirstPersonManipulator();
 
         void setTransformation( const osg::Vec3d& eye, const osg::Quat& rotation );
         void setTransformation( const osg::Vec3d& eye, const osg::Vec3d& center, const osg::Vec3d& up );
@@ -39,10 +52,8 @@ namespace mb {
         osg::Matrixd getInverseMatrix() const;
 
     protected:
-
-
-        bool handleMouseMove( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& us );
-
+        
+        bool handle (const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &us);
     };
 }
 

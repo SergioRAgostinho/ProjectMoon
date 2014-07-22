@@ -114,27 +114,29 @@ void Application::renderLoop() {
 	viewer.setCameraManipulator(camManip);
 
     camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
-
-
+    
 	while (!viewer.done())
 	{
+        //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
+        hideCursor();
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
 
 		//Update our objects
-        moscatel->update();
+        /*moscatel->update();
         if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
             moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
             moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
             moscatel->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-        }
+        }*/
 
         
 
 		//Renders frame
 		viewer.frame();
+
 	}
 
 }
@@ -149,18 +151,18 @@ void Application::populateScene() {
     marsSurface = new mb::Body(surface.get());
     marsSurface->initCollision(pSpace);
 
-    moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
-    moscatel->initPhysics(pWorld, pSpace, 2);
-    moscatel->setPosition(60, 0, 60);
+    //moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
+    //moscatel->initPhysics(pWorld, pSpace, 2);
+    //moscatel->setPosition(60, 0, 60);
 
     //Add to root
     root = new osg::Group;
     root->addChild(marsSurface->getPAT());
-    root->addChild(moscatel->getPAT());
+    //root->addChild(moscatel->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object
-    viewer.addEventHandler(new mb::KeyboardEventHandler(moscatel));
+    //viewer.addEventHandler(new mb::KeyboardEventHandler(moscatel));
 }
 
 void Application::setGraphicsContext() {
@@ -190,4 +192,16 @@ void Application::setGraphicsContext() {
     //Place the camera
     camera->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
 
+}
+
+void Application::hideCursor(){
+    // switch off the cursor
+    osgViewer::Viewer::Windows windows;
+    viewer.getWindows(windows);
+    for(osgViewer::Viewer::Windows::iterator itr = windows.begin();
+        itr != windows.end();
+        ++itr)
+    {
+        (*itr)->useCursor(false);
+    }
 }

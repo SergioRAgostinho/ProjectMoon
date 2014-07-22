@@ -76,6 +76,10 @@ class Application
 	//Function called everytime two objects are potencially near
 	static void nearCallback(void *data, dGeomID o1, dGeomID o2);
 
+    //To hide the cursor in every windows of the osgViewer
+    void hideCursor();
+
+    
 public:
 	Application();
 	~Application();
