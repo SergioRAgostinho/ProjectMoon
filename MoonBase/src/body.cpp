@@ -324,6 +324,22 @@ bool Body::triOGS2ODE() {
     return true;
 }
 
+void Body::activateBB() {
+    if (gBBState)
+        return;
+
+    gPAT->addChild(gBB.get());
+    gBBState = true;
+}
+
+void Body::removeBB() {
+    if (!gBBState)
+        return;
+
+    gPAT->removeChild(gBB.get());
+    gBBState = false;
+}
+
 void Body::toggleBB() {
     if (gBBState)
         gPAT->removeChild(gBB.get());

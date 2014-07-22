@@ -30,6 +30,7 @@ class Application
 	//Graphical context and related traits
 	osg::ref_ptr<osg::GraphicsContext> gc;
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits;
+    osg::ref_ptr<osg::Camera> camera;
 
 	//Optimizer
 	osgUtil::Optimizer optimizer;
@@ -38,6 +39,7 @@ class Application
 	osg::ref_ptr<osg::Group> root;
     mb::Loader* loader, *loader2;
     mb::Body *marsSurface, *moscatel;
+    std::vector<mb::Body*> selectableObjects;
 
 
 	////////////////////////

@@ -110,7 +110,7 @@ void Application::setPhysics() {
 void Application::renderLoop() {
 
     camManip = new osgGA::TrackballManipulator();
-    camManip = new mb::FirstPersonManipulator();
+//    camManip = new mb::FirstPersonManipulator();
 	viewer.setCameraManipulator(camManip);
 
     camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
@@ -124,12 +124,12 @@ void Application::renderLoop() {
 		dJointGroupEmpty(pCollisionJG);
 
 		//Update our objects
-        moscatel->update();
-        if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
-            moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-            moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-            moscatel->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-        }
+//        moscatel->update();
+//        if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
+//            moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
+//            moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
+//            moscatel->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+//        }
 
         
 
@@ -148,10 +148,12 @@ void Application::populateScene() {
     osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
     marsSurface = new mb::Body(surface.get());
     marsSurface->initCollision(pSpace);
+    selectableObjects.push_back(marsSurface);
 
     moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
-    moscatel->initPhysics(pWorld, pSpace, 2);
+//    moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
+    selectableObjects.push_back(moscatel);
 
     //Add to root
     root = new osg::Group;
@@ -161,6 +163,7 @@ void Application::populateScene() {
 
     //Subscribe object
     viewer.addEventHandler(new mb::KeyboardEventHandler(moscatel));
+    viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects));
 }
 
 void Application::setGraphicsContext() {
@@ -176,7 +179,7 @@ void Application::setGraphicsContext() {
 
 	gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
-	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+	camera = new osg::Camera;
 	camera->setGraphicsContext(gc.get());
     camera->setViewport(new osg::Viewport(0, 0, traits->width , traits->height));
 	GLenum bufferL = traits->doubleBuffer ? GL_BACK : GL_FRONT;

@@ -112,6 +112,12 @@ namespace mb {
         //Update position and orientation
         void update();
 
+        //Show bounding box drawing
+        void activateBB();
+
+        //Remove bounding box drawing
+        void removeBB();
+
         //Toggle bounding box drawing routines
         void toggleBB();
     };

@@ -12,20 +12,29 @@
 #include <osgGA/GUIEventHandler>
 #include <osgViewer/View>
 #include <osgManipulator/Dragger>
+#include <MB/body.h>
 
-class MouseEventHandler : public osgGA::GUIEventHandler {
-    
-    osgManipulator::PointerInfo pointerInfo;
-    osgManipulator::Dragger* activeDragger;
-    osg::Camera* camera;
+namespace mb {
 
-public:
-    
-    MouseEventHandler(osg::Camera* cam);
-    
-    //the event handler
-    bool handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa, osg::Object * object, osg::NodeVisitor * node);
-    
-};
+    class MouseEventHandler : public osgGA::GUIEventHandler {
 
+        osgManipulator::PointerInfo pointerInfo;
+        osg::Camera* camera;
+        std::vector<Body*> *selectableBodies;
+        bool *selected, *active;
+        int *inactiveCounter;
+
+    public:
+
+        MouseEventHandler(osg::Camera* cam);
+        MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b);
+
+        ~MouseEventHandler();
+
+        //the event handler
+        bool handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa, osg::Object * object, osg::NodeVisitor * node);
+        
+    };
+
+}
 #endif
