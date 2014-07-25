@@ -15,19 +15,22 @@ using namespace mb;
 Loader::Loader(const std::string& path) {
 
     //Load object
-    gNode = osgDB::readNodeFile(path);
+    osg::ref_ptr<osgDB::Options> options = new osgDB::Options();
+    options->setDatabasePath("../res/textures/");
+    gNode = osgDB::readNodeFile(path,options);
 
 }
 
 osg::Node* Loader::getNode(const std::string &name) {
-    FindNodeVisitor nodeVisitor = FindNodeVisitor(name);
+    FindNodeVisitor<osg::Node> nodeVisitor = FindNodeVisitor<osg::Node>(name);
     gNode->accept(nodeVisitor);
     return nodeVisitor.getFirst();
 }
 
+
 bool Loader::setRoot(const std::string& name) {
 
-    FindNodeVisitor nodeVisitor = FindNodeVisitor(name);
+    FindNodeVisitor<osg::Node> nodeVisitor = FindNodeVisitor<osg::Node>(name);
     gNode->accept(nodeVisitor);
     osg::Node* node = nodeVisitor.getFirst();
     if (node) {

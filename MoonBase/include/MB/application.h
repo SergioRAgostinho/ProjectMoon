@@ -14,8 +14,12 @@
 #include <MB/mouseeventhandler.h>
 #include <MB/loader.h>
 
+#define N_CUBES 1
+#define N_BOTTLES 100
+
 class Application
 {
+public:
 	/////////////////////
 	// Open Scene Graph
 	/////////////////////
@@ -27,16 +31,16 @@ class Application
 	//Graphical context and related traits
 	osg::ref_ptr<osg::GraphicsContext> gc;
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits;
+    osg::ref_ptr<osg::Camera> camera;
 
 	//Optimizer
 	osgUtil::Optimizer optimizer;
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-    mb::Cube* cube;
-    mb::InfinitePlane* plane;
-    mb::Loader* loader;
-    mb::Body* hex;
+    mb::Loader* loader, *loader2;
+    mb::Body *marsSurface, *moscatel, *moscatelTBRot;
+    std::vector<mb::Body*> selectableObjects;
 
 
 	////////////////////////
@@ -75,7 +79,11 @@ class Application
 	//Function called everytime two objects are potencially near
 	static void nearCallback(void *data, dGeomID o1, dGeomID o2);
 
-public:
+    //To hide the cursor in every windows of the osgViewer
+    void hideCursor();
+
+    
+
 	Application();
 	~Application();
 

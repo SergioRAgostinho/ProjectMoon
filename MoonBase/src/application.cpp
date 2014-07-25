@@ -1,6 +1,10 @@
 
+#include <osgGA/FirstPersonManipulator>
 #include <MB/application.h>
 #include <MB/keyboardeventhandler.h>
+#include <MB/utils.hpp>
+#include <MB/fpmanipulator.h>
+
 
 
 Application::Application()
@@ -12,10 +16,12 @@ Application::Application()
 Application::~Application()
 {
 	//FIXME
-	delete cube;
-    delete plane;
+//	delete [] cubes;
     delete loader;
-    delete hex;
+    delete loader2;
+    delete marsSurface;
+    delete moscatel;
+
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -61,20 +67,17 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	if (b1 && b2 && dAreConnected(b1, b2))
 		return;
 
-	const int N = 4;
+	const int N = 64;
 	dContact contact[N];
 	n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
 	if (n > 0) {
 		for (i = 0; i<n; i++) {
-			contact[i].surface.mode = dContactSlip1 | dContactSlip2 | dContactSoftERP | dContactSoftCFM | dContactApprox1;
-			if (dGeomGetClass(o1) == dSphereClass || dGeomGetClass(o2) == dSphereClass)
-				contact[i].surface.mu = 20;
-			else
-				contact[i].surface.mu = 0.5;
-			contact[i].surface.slip1 = 0.0;
-			contact[i].surface.slip2 = 0.0;
-			contact[i].surface.soft_erp = 0.8;
-			contact[i].surface.soft_cfm = 0.01;
+            contact[i].surface.mode = dContactBounce | dContactSoftCFM;
+            contact[i].surface.mu = dInfinity;
+            contact[i].surface.mu2 = 0;
+            contact[i].surface.bounce = 0.1;
+            contact[i].surface.bounce_vel = 0.01;
+            contact[i].surface.soft_cfm = 0.001;
 			dJointID c = dJointCreateContact(app->pWorld, app->pCollisionJG, contact + i);
 			dJointAttach(c, dGeomGetBody(o1), dGeomGetBody(o2));
 		}
@@ -84,7 +87,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 void Application::setPhysics() {
 	// recreate world
 	pWorld = dWorldCreate();
-	dWorldSetGravity(pWorld, 0, 0, -0.01);
+	dWorldSetGravity(pWorld, 0, 0, -9.81);
 	dWorldSetCFM(pWorld, 1e-10);
 	dWorldSetERP(pWorld, 0.8);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
@@ -106,56 +109,72 @@ void Application::setPhysics() {
 
 void Application::renderLoop() {
 
-    camManip = new osgGA::TrackballManipulator();
+//    camManip = new osgGA::TrackballManipulator();
+    camManip = new mb::FirstPersonManipulator();
 	viewer.setCameraManipulator(camManip);
 
-    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(-M_PI/6.0, 1, 0, 0 ) * osg::Matrix::translate(0, -10, 6) );
-
-
+    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
+    
 	while (!viewer.done())
 	{
+        //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
+        hideCursor();
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
 
-		//Update our cube position
-		cube->update();
-        hex->update();
+		//Update our objects
+//        moscatel->update();
+//        if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
+//            moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
+//            moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
+//            moscatel->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+//        }
+
 
 		//Renders frame
 		viewer.frame();
+
 	}
 
 }
 
 void Application::populateScene() {
 
-	cube = new mb::Cube(pWorld, pSpace, 1);
-    plane = new mb::InfinitePlane(pSpace);
-    loader = new mb::Loader("../res/models/hex.osgt");
-//    loadedObject = new LoadedObject(pWorld, pSpace, "../res/models/MarsSurface.osgt");
-
-
-	//Place and set the cube
-	cube->setAngularVelocity(0, 0, 0.1);
-    cube->setPosition(0, 0, 1);
-
+    loader = new mb::Loader("../res/models/MarsSurface.osgt");
+    loader2 = new mb::Loader("../res/models/moscatel.osgt");
 
     //Place the hexagon
-    hex = new mb::Body(dynamic_cast<osg::Geode*>(loader->getNode("pCube1-GEODE")));
-    hex->initPhysics(pWorld, pSpace);
-    hex->setPosition(0, 10, 2);
+    osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
+    marsSurface = new mb::Body(surface.get());
+    marsSurface->initCollision(pSpace);
+
+
+    moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
+//    moscatel->initPhysics(pWorld, pSpace, 2);
+    moscatel->setPosition(60, 0, 60);
+    selectableObjects.push_back(moscatel);
+
+    moscatelTBRot = moscatel->clone();
+    moscatelTBRot->setPosition(50, 0, 60);
+    osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+    axis.normalize();
+    osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
+    osg::Quat q = rot.getRotate();
+    moscatelTBRot->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
+    selectableObjects.push_back(moscatelTBRot);
 
     //Add to root
     root = new osg::Group;
-	root->addChild(cube->getPAT());
-    root->addChild(plane->getGeode());
-    root->addChild(hex->getPAT());
+    root->addChild(marsSurface->getPAT());
+    root->addChild(moscatel->getPAT());
+    root->addChild(moscatelTBRot->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object
-    viewer.addEventHandler(new mb::KeyboardEventHandler(cube));
+    viewer.addEventHandler(new mb::KeyboardEventHandler(this));
+    viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects));
 }
 
 void Application::setGraphicsContext() {
@@ -164,34 +183,37 @@ void Application::setGraphicsContext() {
 	traits->x = 100;
 	traits->y = 100;
 	traits->width = 1280;
-	traits->height = 480;
+	traits->height = 720;
 	traits->windowDecoration = true;
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
 
 	gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
-	osg::ref_ptr<osg::Camera> cameraL = new osg::Camera;
-	cameraL->setGraphicsContext(gc.get());
-	cameraL->setViewport(new osg::Viewport(0, 0, traits->width / 2.0, traits->height));
+	camera = new osg::Camera;
+	camera->setGraphicsContext(gc.get());
+    camera->setViewport(new osg::Viewport(0, 0, traits->width , traits->height));
 	GLenum bufferL = traits->doubleBuffer ? GL_BACK : GL_FRONT;
-	cameraL->setDrawBuffer(bufferL);
-	cameraL->setReadBuffer(bufferL);
+	camera->setDrawBuffer(bufferL);
+	camera->setReadBuffer(bufferL);
 
 	// add this slave camera to the viewer, with a shift left of the projection matrix
-	viewer.addSlave(cameraL.get(), osg::Matrixd::translate(0.06, 0, 0), osg::Matrixd());
+    viewer.addSlave(camera.get());
 
-	osg::ref_ptr<osg::Camera> cameraR = new osg::Camera;
-	cameraR->setGraphicsContext(gc.get());
-	cameraR->setViewport(new osg::Viewport(traits->width / 2.0, 0, traits->width / 2.0, traits->height));
-	GLenum bufferR = traits->doubleBuffer ? GL_BACK : GL_FRONT;
-	cameraR->setDrawBuffer(bufferR);
-	cameraR->setReadBuffer(bufferR);
-
-	// add this slave camera to the viewer, with a shift left of the projection matrix
-	viewer.addSlave(cameraR.get(), osg::Matrixd::translate(-.06, 0, 0), osg::Matrixd());
 
     //Place the camera
-    cameraL->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
+    camera->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
 
+}
+
+void Application::hideCursor(){
+    // switch off the cursor
+    osgViewer::Viewer::Windows windows;
+    viewer.getWindows(windows);
+    for(osgViewer::Viewer::Windows::iterator itr = windows.begin();
+        itr != windows.end();
+        ++itr)
+    {
+        (*itr)->useCursor(false);
+    }
 }

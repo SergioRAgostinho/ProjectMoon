@@ -2,15 +2,18 @@
 
 using namespace mb;
 
-Cube::Cube(dWorldID w, dSpaceID s, dReal size)
+Cube::Cube()
 {
-    pWorld = w;
-    pSpace = s;
+	//Graphics
+	osg::ref_ptr<osg::Box> gBox = new osg::Box(osg::Vec3(0, 0, 0), 1);
+	osg::ref_ptr<osg::ShapeDrawable>  gBoxShape = new osg::ShapeDrawable(gBox.get());
+	gGeode->addDrawable(gBoxShape);
+}
 
-	pBody = dBodyCreate(pWorld);
+Cube::Cube(dWorldID w, dSpaceID s, dReal size) : Body(w,s)
+{
 	pGeom = dCreateBox(pSpace, (dReal)size, (dReal)size, (dReal)size);
-	dGeomSetBody(pGeom, pBody);
-	
+    initPhysics(w, s);
 
 	//Graphics
 	osg::ref_ptr<osg::Box> gBox = new osg::Box(osg::Vec3(0, 0, 0), (float) size);
