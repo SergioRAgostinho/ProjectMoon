@@ -11,17 +11,18 @@
 
 #include <osgGA/GUIEventHandler>
 #include <MB/body.h>
+#include <MB/application.h>
 
 
 namespace mb {
 
     class KeyboardEventHandler : public osgGA::GUIEventHandler {
 
-        Body* body;
+        Application* app;
 
     public:
 
-        KeyboardEventHandler(Body* b);
+        KeyboardEventHandler(Application* a);
 
         virtual bool handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa);
 

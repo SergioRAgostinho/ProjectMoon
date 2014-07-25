@@ -118,7 +118,7 @@ void Application::renderLoop() {
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
-        //hideCursor();
+        hideCursor();
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
@@ -149,7 +149,6 @@ void Application::populateScene() {
     osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
     marsSurface = new mb::Body(surface.get());
     marsSurface->initCollision(pSpace);
-    selectableObjects.push_back(marsSurface);
 
 
     moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
@@ -157,14 +156,24 @@ void Application::populateScene() {
     moscatel->setPosition(60, 0, 60);
     selectableObjects.push_back(moscatel);
 
+    moscatelTBRot = moscatel->clone();
+    moscatelTBRot->setPosition(50, 0, 60);
+    osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+    axis.normalize();
+    osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
+    osg::Quat q = rot.getRotate();
+    moscatelTBRot->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
+    selectableObjects.push_back(moscatelTBRot);
+
     //Add to root
     root = new osg::Group;
     root->addChild(marsSurface->getPAT());
     root->addChild(moscatel->getPAT());
+    root->addChild(moscatelTBRot->getPAT());
     viewer.setSceneData(root.get());
 
     //Subscribe object
-    viewer.addEventHandler(new mb::KeyboardEventHandler(moscatel));
+    viewer.addEventHandler(new mb::KeyboardEventHandler(this));
     viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects));
 }
 

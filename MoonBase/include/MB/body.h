@@ -59,6 +59,9 @@ namespace mb {
         //Deconstructor afterparty
         ~Body();
 
+        //Align the current body with the provided one
+        void align(Body* ref);
+
         //return a clone/clones
         Body* clone();
         Body* clone(int nClones);
@@ -85,6 +88,9 @@ namespace mb {
         //Set linear velocity
         double getLinearSpeed();
 
+        //Get Orientation Mat
+        osg::Matrix getOrientationMat();
+
         //Set the geode
         void setGeode(osg::Geode* geode);
 
@@ -102,7 +108,10 @@ namespace mb {
 
         //Set Orientation
         void setOrientationQuat(double x, double y, double z, double w);
-        
+
+        //Set Orientation Mat
+        void setOrientationMat(osg::Matrix mat);
+
         //Set the object position
         void setPosition(double x, double y, double z);
 

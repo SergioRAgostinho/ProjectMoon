@@ -12,23 +12,36 @@
 
 using namespace mb;
 
-KeyboardEventHandler::KeyboardEventHandler(Body* b) : body(b) {}
+KeyboardEventHandler::KeyboardEventHandler(Application* a) : app(a) {}
 
 bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa) {
+
+    Body* body = app->moscatelTBRot;
 
     switch (ea.getEventType()) {
         case osgGA::GUIEventAdapter::KEYUP:
         {
             switch (ea.getKey()) {
+//                case 'r':
+//                case 'R':
+//                    body->setPosition(0, 0, 60);
+//                    body->setLinearVelocity(uniRand(-10, 10),uniRand(-10, 10),uniRand(-10, 10));
+//                    body->setAngularVelocity(uniRand(-1, 1),uniRand(-1, 1),uniRand(-1, 1));
+//                    break;
                 case 'r':
                 case 'R':
-                    body->setPosition(0, 0, 60);
-                    body->setLinearVelocity(uniRand(-10, 10),uniRand(-10, 10),uniRand(-10, 10));
-                    body->setAngularVelocity(uniRand(-1, 1),uniRand(-1, 1),uniRand(-1, 1));
+                    //align with other object
+                    body->align(app->moscatel);
                     break;
                 case 't':
-                case 'T':
-                    body->toggleBB();
+                case 'T': {
+                    osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
+                    axis.normalize();
+                    osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
+                    osg::Quat q = rot.getRotate();
+                    body->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
+                    break;
+                }
                 default:
                     break;
             }

@@ -19,7 +19,6 @@ FirstPersonManipulator::FirstPersonManipulator(){
     deltaRX = 0;
     deltaRY = 0;
     offsetScreen = 50.0;
-    blockUpdateForNextCall = false;
 }
 
 bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &us){
@@ -148,8 +147,6 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
                 newReqXPosition = newMouseXPosition;
                 newReqYPosition = newMouseYPosition;
                 us.requestWarpPointer(newMouseXPosition, ea.getWindowHeight() - newMouseYPosition);
-                std::cout << newMouseXPosition << " " << newMouseYPosition << std::endl;
-
             }
 
             return false;

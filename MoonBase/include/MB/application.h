@@ -19,6 +19,7 @@
 
 class Application
 {
+public:
 	/////////////////////
 	// Open Scene Graph
 	/////////////////////
@@ -38,7 +39,7 @@ class Application
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
     mb::Loader* loader, *loader2;
-    mb::Body *marsSurface, *moscatel;
+    mb::Body *marsSurface, *moscatel, *moscatelTBRot;
     std::vector<mb::Body*> selectableObjects;
 
 
@@ -82,7 +83,7 @@ class Application
     void hideCursor();
 
     
-public:
+
 	Application();
 	~Application();
 

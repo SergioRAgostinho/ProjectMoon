@@ -14,6 +14,7 @@
 #include <osg/BlendFunc>
 #include <osg/StateSet>
 #include <osg/PolygonMode>
+#include <mb/utils.hpp>
 
 using namespace mb;
 
@@ -60,12 +61,66 @@ Body::Body(dWorldID w, dSpaceID s) : Object(new osg::Geode()) {
 
 Body::~Body() {}
 
+void Body::align(mb::Body *ref) {
+
+    osg::Matrix R_new;
+    osg::Matrix R = ref->getOrientationMat();
+    osg::Matrix A = this->getOrientationMat();
+
+    int max_idx[3] = {-1,-1,-1};
+    int max_sign[3] = {};
+
+    bool ignore = false;
+    
+    for (int i = 0; i < 3; ++i) {
+        double inner_prod[3]= {};
+        int inner_sign[3]= {};
+
+        for (int j = 0; j < 3; ++j) {
+
+            for (int k = 0; k <= i; ++k){
+                if (max_idx[k] == j) {
+                    ignore = true;
+                    break;
+                }
+            }
+
+            if (ignore) {
+                ignore = false;
+                continue;
+            }
+
+            double innerProd = R(0,j)*A(0,i) + R(1,j)*A(1,i) + R(2,j)*A(2,i);
+            inner_sign[j] = mb::sgn(innerProd);
+            inner_prod[j] = std::abs(innerProd);
+        }
+
+        //find the max and the index
+        double max_inner_prod = 0;
+        for (int j = 0; j < 3; ++j) {
+            if (inner_prod[j] > max_inner_prod) {
+                max_inner_prod = inner_prod[j];
+                max_idx[i] = j;
+                max_sign[i] = inner_sign[j];
+            }
+        }
+
+        R_new(0,i) = max_sign[i] * R(0,max_idx[i]);
+        R_new(1,i) = max_sign[i] * R(1,max_idx[i]);
+        R_new(2,i) = max_sign[i] * R(2,max_idx[i]);
+    }
+
+    setOrientationMat(R_new);
+}
+
 //FIXME: we're gonna need smart pointers for this because if the original mb::Body gets destroyed, everything will fall through
 Body* Body::clone() {
 
     //Clone OSG stuff
     Body* out = new Body();
-    out->gGeode->addDrawable(gGeode->getDrawableList().front());
+    out->gGeode->addDrawable(gGeode->getDrawable(0));
+    out->gBB->removeDrawable(out->gBB->getDrawable(0));
+    out->gBB->addDrawable(gBB->getDrawable(0));
     (out->gPAT)->setPosition(gPAT->getPosition());
     (out->gPAT)->setAttitude(gPAT->getAttitude());
     (out->gPAT)->setScale(gPAT->getScale());
@@ -216,6 +271,13 @@ double Body::getLinearSpeed() {
     return sqrt(lv[0] * lv[0] + lv[1] * lv[1] + lv[2] * lv[2]);
 };
 
+//Get Orientation Mat
+osg::Matrix Body::getOrientationMat() {
+    osg::Matrix out;
+    (gPAT->getAttitude()).get(out);
+    return out;
+}
+
 void Body::setAngularVelocity(double x, double y, double z) {
     if(pBody)
         dBodySetAngularVel(pBody, x, y, z);
@@ -232,6 +294,12 @@ void Body::setOrientationQuat(double x, double y, double z, double w) {
         dQuaternion q = { (dReal) w, (dReal) x, (dReal) y, (dReal) z };
         dGeomSetQuaternion(pGeom, q);
     }
+}
+
+//Set Orientation Mat
+void Body::setOrientationMat(osg::Matrix mat) {
+    osg::Quat q = mat.getRotate();
+    setOrientationQuat(q.x(), q.y(), q.z(), q.w());
 }
 
 void Body::setPosition(double x, double y, double z) {

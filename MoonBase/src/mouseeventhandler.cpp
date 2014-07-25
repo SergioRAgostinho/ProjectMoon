@@ -15,6 +15,7 @@ MouseEventHandler::MouseEventHandler(osg::Camera* cam) :  camera(cam) {}
 
 MouseEventHandler::MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b) : camera(cam) ,selectableBodies(b) {
 
+
     selected = new bool[selectableBodies->size()]();
     memset(selected,0,selectableBodies->size()*sizeof(bool));
     active = new bool[selectableBodies->size()]();
@@ -32,7 +33,8 @@ MouseEventHandler::~MouseEventHandler() {
 //FIXME: Locking behavior. Conflitc between camera manipulator and the object manipulator
 bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa, osg::Object * object, osg::NodeVisitor * node) {
 
-//    static int counter = 0;
+    static Body* selectedBody = nullptr;
+    static bool grabbed = false;
 
     osgViewer::View* view = dynamic_cast<osgViewer::View*>(&aa);
     if (view) {
@@ -46,7 +48,7 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
 
 //                std::cout << ++counter <<std::endl;
 
-                if (view->computeIntersections(ea.getX(), ea.getY(), intersections)) {
+                if (view->computeIntersections(ea.getWindowWidth()>>1, ea.getWindowHeight()>>1, intersections)) {
                     pointerInfo.setCamera(camera);
                     pointerInfo.setMousePosition(ea.getX(), ea.getY());
                     
@@ -72,15 +74,14 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
                                         inactiveCounter[i] = 0;
                                         active[i] = true;
                                         mustBreak = true;
-
-//                                        std::cout << (*selectableBodies)[i] <<std::endl;
+                                        selectedBody = (*selectableBodies)[i];
                                         break;
                                     }
                                 }
 
                                 if (mustBreak)
                                     break;
-                                
+
                             }
                         }
 
@@ -88,12 +89,11 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
                             break;
                     }
 
+                    //no break means no selectable body found
+                    if(!mustBreak)
+                        selectedBody = nullptr;
 
                 }
-
-//                std::cout << "Selected: " << selected[0] << " " << selected[1] <<std::endl;
-//                std::cout << "Active: " << active[0] << " " << active[1] <<std::endl;
-//                std::cout << "Inactive Counter: " << inactiveCounter[0] << " " << inactiveCounter[1] <<std::endl;
 
                 for(int i = 0; i < selectableBodies->size(); ++i) {
                     if(!selected[i] && active[i]) {
@@ -103,8 +103,22 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
                         }
                     }
                 }
-
+                
             }
+            case osgGA::GUIEventAdapter::PUSH:
+                if (!selectedBody) {
+                    //abort if not selecting nothing
+                    break;
+                }
+
+                grabbed = true;
+
+                //Compute the relative distance
+                break;
+            case osgGA::GUIEventAdapter::DRAG:
+                break;
+            case osgGA::GUIEventAdapter::RELEASE:
+                grabbed = false;
                 break;
             default:
                 break;

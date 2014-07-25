@@ -29,8 +29,6 @@ namespace mb {
         
         double offsetScreen;
         
-        bool blockUpdateForNextCall;
-        
     public:
         FirstPersonManipulator();
 
