@@ -91,6 +91,9 @@ namespace mb {
         //Get Orientation Mat
         osg::Matrix getOrientationMat();
 
+        //Get Orientation Mat
+        osg::Quat getOrientationQuat();
+
         //Set the geode
         void setGeode(osg::Geode* geode);
 

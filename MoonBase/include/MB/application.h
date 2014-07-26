@@ -1,3 +1,6 @@
+#ifndef MoonBase_application_h
+#define MoonBase_application_h
+
 #pragma once
 #include <osgViewer/Viewer>
 #include <osgUtil/Optimizer>
@@ -90,4 +93,6 @@ public:
 	int run();
 
 };
+
+#endif
 

@@ -19,7 +19,6 @@ namespace mb {
         osg::Quat _rotation;
 
         osg::Vec2d _mouse;
-
         osg::Vec3d _mouvement;
         
         double translationFactor;
@@ -36,6 +35,12 @@ namespace mb {
         void setTransformation( const osg::Vec3d& eye, const osg::Vec3d& center, const osg::Vec3d& up );
         void getTransformation( osg::Vec3d& eye, osg::Quat& rotation ) const;
         void getTransformation( osg::Vec3d& eye, osg::Vec3d& center, osg::Vec3d& up ) const;
+
+        //Get position
+        osg::Vec3 getPosition();
+
+        //Get position
+        osg::Quat getOrientation();
 
         /** set the position of the matrix manipulator using a 4x4 Matrix.*/
         void setByMatrix(const osg::Matrixd& matrix);

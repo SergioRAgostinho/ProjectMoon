@@ -13,6 +13,7 @@
 #include <osgViewer/View>
 #include <osgManipulator/Dragger>
 #include <MB/body.h>
+#include <MB/fpmanipulator.h>
 
 namespace mb {
 
@@ -24,10 +25,13 @@ namespace mb {
         bool *selected, *active;
         int *inactiveCounter;
 
+        FirstPersonManipulator *camManip;
+
     public:
 
         MouseEventHandler(osg::Camera* cam);
         MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b);
+        MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b, FirstPersonManipulator* cM);
 
         ~MouseEventHandler();
 

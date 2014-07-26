@@ -12,7 +12,6 @@
 using namespace mb;
 
 FirstPersonManipulator::FirstPersonManipulator(){
-    //_mouse.set(450, 450);
     translationFactor = 2;
     _mouvement.set(0,0,0);
     deltaTZ = 0;
@@ -21,15 +20,20 @@ FirstPersonManipulator::FirstPersonManipulator(){
     offsetScreen = 50.0;
 }
 
+
+
 bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &us){
-    
+
+    static int counter = 0;
+    std::cout << " MANIP: " << counter++ << std::endl;
+
 // at frame rendering, GUIEventAdapter::FRAME is thrown here, so we apply detected movements between two
 // frames at this moment. When a frame is not being rendered, we save all movements detected in
 // "_mouvement" et deltaTZ for translation,deltaRX and deltaRY for rotation of the camera.
     
     switch (ea.getEventType()) {
             
-        case osgGA::GUIEventAdapter::FRAME :
+        case osgGA::GUIEventAdapter::FRAME :{
             
             _eye+= _rotation * _mouvement;
             _eye += osg::Vec3d(0,0,deltaTZ);
@@ -37,7 +41,12 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             deltaTZ = 0;
             deltaRX = 0;
             deltaRY = 0;
-            
+
+//            osg::Vec3 front = _eye + _rotation * osg::Vec3(0,0,-20);
+//
+//            std::cout << "X: " <<  _eye.x() << " Y: " <<  _eye.y() << " Z: " <<  _eye.z() << std::endl;
+//            std::cout << "FX: " <<  front.x() << " FY: " <<  front.y() << " FZ: " <<  front.z() << std::endl;
+        }
             break;
             
         //handling keyboard events
@@ -72,28 +81,33 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             switch (ea.getKey()) {
                 case 'w':
                 case 'W':
-                    if(_mouvement.z()==-translationFactor)_mouvement.set(_mouvement.x(), _mouvement.y(),0);
+                    if(_mouvement.z()==-translationFactor)
+                        _mouvement.set(_mouvement.x(), _mouvement.y(),0);
                     return false;
                     break;
                 case 'a':
                 case 'A':
-                    if(_mouvement.x()==-translationFactor)_mouvement.set(0, _mouvement.y(),_mouvement.z());
+                    if(_mouvement.x()==-translationFactor)
+                        _mouvement.set(0, _mouvement.y(),_mouvement.z());
                     return false;
                     break;
                 case 's':
                 case 'S':
-                    if(_mouvement.z()==translationFactor)_mouvement.set(_mouvement.x(), _mouvement.y(),0);
+                    if(_mouvement.z()==translationFactor)
+                        _mouvement.set(_mouvement.x(), _mouvement.y(),0);
                     return false;
                     break;
                 case 'd':
                 case 'D':
-                    if(_mouvement.x()==translationFactor)_mouvement.set(0, _mouvement.y(),_mouvement.z());
+                    if(_mouvement.x()==translationFactor)
+                        _mouvement.set(0, _mouvement.y(),_mouvement.z());
                     return false;
                     break;
             }
         }
             break;
         //handling mouse movement events
+        case osgGA::GUIEventAdapter::DRAG:
         case osgGA::GUIEventAdapter::MOVE:
         {
 
@@ -189,6 +203,16 @@ void FirstPersonManipulator::getTransformation( osg::Vec3d& eye, osg::Quat& rota
 
 void FirstPersonManipulator::getTransformation( osg::Vec3d& eye, osg::Vec3d& center, osg::Vec3d& up ) const {
     std::cout << "mouse get B transform" << std::endl;
+}
+
+//Get position
+osg::Vec3 FirstPersonManipulator::getPosition() {
+    return _eye;
+}
+
+//Get position
+osg::Quat FirstPersonManipulator::getOrientation() {
+    return _rotation;
 }
 
 /** set the position of the matrix manipulator using a 4x4 Matrix.*/

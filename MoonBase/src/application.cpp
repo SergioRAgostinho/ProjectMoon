@@ -109,12 +109,9 @@ void Application::setPhysics() {
 
 void Application::renderLoop() {
 
-//    camManip = new osgGA::TrackballManipulator();
-    camManip = new mb::FirstPersonManipulator();
-	viewer.setCameraManipulator(camManip);
-
+    //needs to be invoked here!
     camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
-    
+
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
@@ -172,9 +169,7 @@ void Application::populateScene() {
     root->addChild(moscatelTBRot->getPAT());
     viewer.setSceneData(root.get());
 
-    //Subscribe object
-    viewer.addEventHandler(new mb::KeyboardEventHandler(this));
-    viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects));
+
 }
 
 void Application::setGraphicsContext() {
@@ -200,9 +195,14 @@ void Application::setGraphicsContext() {
 	// add this slave camera to the viewer, with a shift left of the projection matrix
     viewer.addSlave(camera.get());
 
+    //Camera manipulator
+    camManip = new mb::FirstPersonManipulator();
 
-    //Place the camera
-    camera->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
+    
+    //Subscribe object
+    viewer.setCameraManipulator(camManip);
+    viewer.addEventHandler(new mb::KeyboardEventHandler(this));
+    viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects, dynamic_cast<mb::FirstPersonManipulator*>(camManip.get())));
 
 }
 

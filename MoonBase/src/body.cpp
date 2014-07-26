@@ -278,6 +278,11 @@ osg::Matrix Body::getOrientationMat() {
     return out;
 }
 
+//Get Orientation Mat
+osg::Quat Body::getOrientationQuat() {
+    return gPAT->getAttitude();
+};
+
 void Body::setAngularVelocity(double x, double y, double z) {
     if(pBody)
         dBodySetAngularVel(pBody, x, y, z);

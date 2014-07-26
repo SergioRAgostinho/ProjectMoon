@@ -9,6 +9,7 @@
 #include <MB/mouseeventhandler.h>
 #include <iostream>
 
+
 using namespace mb;
 
 MouseEventHandler::MouseEventHandler(osg::Camera* cam) :  camera(cam) {}
@@ -24,6 +25,17 @@ MouseEventHandler::MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b) : 
     memset(inactiveCounter,0,selectableBodies->size()*sizeof(int));
 }
 
+MouseEventHandler::MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b, mb::FirstPersonManipulator* cM) : camera(cam) ,selectableBodies(b), camManip(cM) {
+
+    selected = new bool[selectableBodies->size()]();
+    memset(selected,0,selectableBodies->size()*sizeof(bool));
+    active = new bool[selectableBodies->size()]();
+    memset(active,0,selectableBodies->size()*sizeof(bool));
+    inactiveCounter = new int[selectableBodies->size()]();
+    memset(inactiveCounter,0,selectableBodies->size()*sizeof(int));
+
+}
+
 MouseEventHandler::~MouseEventHandler() {
     delete [] selected;
     delete [] active;
@@ -35,6 +47,9 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
 
     static Body* selectedBody = nullptr;
     static bool grabbed = false;
+
+    static int counter = 0;
+    std::cout << " MOUSE: " << counter++ << std::endl;
 
     osgViewer::View* view = dynamic_cast<osgViewer::View*>(&aa);
     if (view) {
@@ -103,22 +118,50 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
                         }
                     }
                 }
-                
+
+//                std::cout << "MOVE" << " Grabbed: " << grabbed << std::endl;
+                break;
             }
-            case osgGA::GUIEventAdapter::PUSH:
+            case osgGA::GUIEventAdapter::PUSH: {
                 if (!selectedBody) {
                     //abort if not selecting nothing
                     break;
                 }
 
+
+
                 grabbed = true;
+//                std::cout << "PUSH" << " Grabbed: " << grabbed << std::endl;
+
+//                //Compute the relative distance
+//                osg::Vec3 pos = camManip->getPosition() + camManip->getOrientation() * osg::Vec3(0,0,-30);
+//                selectedBody->setPosition(pos.x(), pos.y(), pos.z());
+
+//                osg::Quat q = camManip->getOrientation() * selectedBody->getOrientationQuat();
+//                selectedBody->setOrientationQuat(q.x(), q.y(), q.y(), q.w());
+                break;
+            }
+            case osgGA::GUIEventAdapter::FRAME: {
+                if (!(selectedBody && grabbed)) {
+                    break;
+                }
+
+//                std::cout << "FRAME" << " Grabbed: " << grabbed <<std::endl;
 
                 //Compute the relative distance
+                osg::Vec3 pos = camManip->getPosition() + camManip->getOrientation() * osg::Vec3(0,0,-30);
+                selectedBody->setPosition(pos.x(), pos.y(), pos.z());
+
+//                osg::Quat q = camManip->getOrientation() * selectedBody->getOrientationQuat();
+//                selectedBody->setOrientationQuat(q.x(), q.y(), q.y(), q.w());
                 break;
-            case osgGA::GUIEventAdapter::DRAG:
-                break;
+            }
             case osgGA::GUIEventAdapter::RELEASE:
+                if (!(selectedBody && grabbed)) {
+                    break;
+                }
                 grabbed = false;
+//                std::cout << "RELEASE" << " Grabbed: " << grabbed << std::endl;
                 break;
             default:
                 break;
