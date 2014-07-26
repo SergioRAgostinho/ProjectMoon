@@ -13,6 +13,7 @@
 #include <MB/infiniteplane.h>
 #include <MB/mouseeventhandler.h>
 #include <MB/loader.h>
+#include <MB/hud.h>
 
 #define N_CUBES 1
 #define N_BOTTLES 100
@@ -39,6 +40,8 @@ class Application
     mb::Loader* loader, *loader2;
     mb::Body *marsSurface, *moscatel;
 
+    //HUD
+    mb::Hud* hud;
 
 	////////////////////////
 	// ODE (physics)

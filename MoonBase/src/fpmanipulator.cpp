@@ -100,9 +100,13 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             if(!blockUpdateForNextCall){
                 deltaRX += ea.getX() - _mouse.x();
                 deltaRY += ea.getY() - _mouse.y();
+                
+                std::cout << "VarX: " << ea.getX() - _mouse.x() << std::endl;
             }
             else{
                 blockUpdateForNextCall = false;
+                
+                std::cout << "BLOCK VarX: " << ea.getX() - _mouse.x() << std::endl;
             }
 
                 
