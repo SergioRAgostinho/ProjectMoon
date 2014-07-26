@@ -16,6 +16,7 @@
 #include <MB/infiniteplane.h>
 #include <MB/mouseeventhandler.h>
 #include <MB/loader.h>
+#include <MB/hud.h>
 
 #define N_CUBES 1
 #define N_BOTTLES 100
@@ -45,6 +46,8 @@ public:
     mb::Body *marsSurface, *moscatel, *moscatelTBRot;
     std::vector<mb::Body*> selectableObjects;
 
+    //HUD
+    mb::Hud* hud;
 
 	////////////////////////
 	// ODE (physics)

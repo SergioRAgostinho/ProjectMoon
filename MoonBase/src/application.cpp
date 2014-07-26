@@ -109,13 +109,14 @@ void Application::setPhysics() {
 
 void Application::renderLoop() {
 
+
     //needs to be invoked here!
-    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
+    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(s0, -30, 10) );
 
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
-        hideCursor();
+//        hideCursor();
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
@@ -148,6 +149,7 @@ void Application::populateScene() {
     marsSurface->initCollision(pSpace);
 
 
+
     moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
 //    moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
@@ -167,9 +169,8 @@ void Application::populateScene() {
     root->addChild(marsSurface->getPAT());
     root->addChild(moscatel->getPAT());
     root->addChild(moscatelTBRot->getPAT());
+    root->addChild(hud->init());
     viewer.setSceneData(root.get());
-
-
 }
 
 void Application::setGraphicsContext() {
@@ -204,6 +205,10 @@ void Application::setGraphicsContext() {
     viewer.addEventHandler(new mb::KeyboardEventHandler(this));
     viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects, dynamic_cast<mb::FirstPersonManipulator*>(camManip.get())));
 
+    //HUD
+    hud = new mb::Hud();
+    hud->setScreenDimensions(traits->height, traits->width);
+    
 }
 
 void Application::hideCursor(){
