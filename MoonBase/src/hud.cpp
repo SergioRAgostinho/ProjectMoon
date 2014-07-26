@@ -46,10 +46,10 @@ osg::Projection* Hud::init(){
     osg::Geometry* HUDBackgroundGeometry = new osg::Geometry();
     
     osg::Vec3Array* HUDBackgroundVertices = new osg::Vec3Array;
-    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0-100,screenHeight/2.0-100,-1) );
-    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0+100,screenHeight/2.0-100,-1) );
-    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0+100,screenHeight/2.0+100,-1) );
-    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0-100,screenHeight/2.0+100,-1) );
+    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0-10,screenHeight/2.0-10,-1) );
+    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0+10,screenHeight/2.0-10,-1) );
+    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0+10,screenHeight/2.0+10,-1) );
+    HUDBackgroundVertices->push_back( osg::Vec3(screenWidth/2.0-10,screenHeight/2.0+10,-1) );
     
     osg::DrawElementsUInt* HUDBackgroundIndices =
     new osg::DrawElementsUInt(osg::PrimitiveSet::POLYGON, 0);
@@ -73,7 +73,7 @@ osg::Projection* Hud::init(){
     osg::Texture2D* HUDTexture = new osg::Texture2D;
     HUDTexture->setDataVariance(osg::Object::DYNAMIC);
     osg::Image* hudImage;
-    hudImage = osgDB::readImageFile("../res/textures/hud/crosshair.png");
+    hudImage = osgDB::readImageFile("../res/textures/crosshair_w.png");
     HUDTexture->setImage(hudImage);
     osg::Vec3Array* HUDnormals = new osg::Vec3Array;
     HUDnormals->push_back(osg::Vec3(0.0f,0.0f,1.0f));
