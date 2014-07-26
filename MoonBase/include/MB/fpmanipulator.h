@@ -39,6 +39,7 @@ namespace mb {
         osg::Camera* camera;
         std::vector<Body*> *selectableBodies;
         Body* selectedBody = nullptr;
+        Body* grabbedBody = nullptr;
         bool *selected, *active;
         int *inactiveCounter;
 

@@ -191,20 +191,23 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         case osgGA::GUIEventAdapter::PUSH: {
             if (selectedBody) {
                 grabbed = true;
-                selectedBody->setLinearVelocity(0, 0, 0);
+                grabbedBody = selectedBody;
                 selectedBody->setAngularVelocity(0, 0, 0);
-                selectedBody->disablePBody();
 
                 static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
                 _rotationGrab =  selectedBody->getOrientationQuat() * (corr * _rotation).conj();
-//                _rotationGrab = osg::Quat(); 
             }
             break;
         }
         case osgGA::GUIEventAdapter::RELEASE:
-            if (selectedBody && grabbed) {
+            if (grabbedBody && grabbed) {
                 grabbed = false;
-                selectedBody->enablePBody();
+
+                double lv[3];
+                grabbedBody->getLinearVelocity(&lv[0]);
+                grabbedBody->setLinearVelocity(lv[0]*0.1, lv[1]*0.1, lv[2]*0.1);
+                grabbedBody->enablePBody();
+                grabbedBody = nullptr;
             }
             break;
         default:
@@ -220,7 +223,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
     if (view) {
         checkSelectables(view, &ea);
     }
-    if (selectedBody && grabbed) {
+    if (grabbedBody && grabbed) {
         updateGrabbed();
     }
 
@@ -322,12 +325,15 @@ void FirstPersonManipulator::checkSelectables(osgViewer::View* view,const osgGA:
 
                     for( int i = 0 ; i < selectableBodies->size(); ++i) {
                         if((*selectableBodies)[i]->getGeode() == geo) {
-                            (*selectableBodies)[i]->activateBB();
-                            selected[i] = true;
-                            inactiveCounter[i] = 0;
-                            active[i] = true;
-                            mustBreak = true;
-                            selectedBody = (*selectableBodies)[i];
+
+//                            if(((*selectableBodies)[i]->getPosition() - _eye).length() <= 200) {
+                                (*selectableBodies)[i]->activateBB();
+                                selected[i] = true;
+                                inactiveCounter[i] = 0;
+                                active[i] = true;
+                                mustBreak = true;
+                                selectedBody = (*selectableBodies)[i];
+//                            }
                             break;
                         }
                     }
@@ -361,16 +367,33 @@ void FirstPersonManipulator::checkSelectables(osgViewer::View* view,const osgGA:
 void FirstPersonManipulator::updateGrabbed() {
     //Compute the relative distance
     osg::Vec3 pos = _eye + _rotation * osg::Vec3(0,0,-30);
-    selectedBody->setPosition(pos.x(), pos.y(), pos.z());
+
+    //Fix it once it's close
+    if(!grabbedBody->isPBodyEnabled() ||(pos - grabbedBody->getPosition()).length() < 2 ) {
+        grabbedBody->disablePBody();
+        grabbedBody->setPosition(pos.x(), pos.y(), pos.z());
+        grabbedBody->setLinearVelocity(0, 0, 0);
+    } else {
+        //Gravity gun style
+        static float powerfactor = 4; // Higher values causes the targets moving faster to the holding point.
+        static float maxVel = 800;      // Lower values prevent objects flying through walls.
+
+
+        osg::Vec3 v = pos - grabbedBody->getPosition(); // direction to move the Target
+        v *= powerfactor; // powerfactor of the GravityGun
+
+        if ( v.length() > maxVel )
+        {
+            // if the correction-velocity is bigger than maximum
+            v.normalize();
+            v *= maxVel; // just set correction-velocity to the maximum
+        }
+        grabbedBody->setLinearVelocity(v.x(), v.y(), v.z());
+    }
+    grabbedBody->setAngularVelocity(0, 0, 0);
 
     static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
-    //osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ).getRotate();
-//    osg::Matrix q;
-//    _rotation.get(q);
-//    osg::Matrix qBody = selectedBody->getOrientationMat();
-//    q.set(qBody);
-
     osg::Quat q1 = _rotationGrab * corr * _rotation ;
-    selectedBody->setOrientationQuat(q1.x(), q1.y(), q1.z(), q1.w());
+    grabbedBody->setOrientationQuat(q1.x(), q1.y(), q1.z(), q1.w());
 }
 

@@ -72,6 +72,9 @@ namespace mb {
         //disables dinamical properties of the body
         void disablePBody();
 
+        //checks if pBody is enabled
+        bool isPBodyEnabled();
+
         //Initialize only the collision geometry
         void initCollision(dSpaceID space);
 
@@ -97,8 +100,11 @@ namespace mb {
         //Get Orientation Mat
         osg::Matrix getOrientationMat();
 
-        //Get Orientation Mat
+        //Get Orientation Quaternion
         osg::Quat getOrientationQuat();
+
+        //Get Position
+        osg::Vec3 getPosition();
 
         //Set the geode
         void setGeode(osg::Geode* geode);
@@ -114,6 +120,9 @@ namespace mb {
 
         //Set linear velocity
         void setLinearVelocity(double x, double y, double z);
+
+        //Set linear acceleration
+        void setLinearAcceleration(double x, double y, double z);
 
         //Set Orientation
         void setOrientationQuat(double x, double y, double z, double w);

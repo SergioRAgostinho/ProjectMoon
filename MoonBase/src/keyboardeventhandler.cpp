@@ -25,12 +25,12 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
         case osgGA::GUIEventAdapter::KEYUP:
         {
             switch (ea.getKey()) {
-//                case 'r':
-//                case 'R':
-//                    body->setPosition(0, 0, 60);
-//                    body->setLinearVelocity(uniRand(-10, 10),uniRand(-10, 10),uniRand(-10, 10));
-//                    body->setAngularVelocity(uniRand(-1, 1),uniRand(-1, 1),uniRand(-1, 1));
-//                    break;
+                case 'f':
+                case 'F':
+                    body->setPosition(0, 0, 60);
+                    body->setLinearVelocity(uniRand(-10, 10),uniRand(-10, 10),uniRand(-10, 10));
+                    body->setAngularVelocity(uniRand(-1, 1),uniRand(-1, 1),uniRand(-1, 1));
+                    break;
                 case 'r':
                 case 'R':
                     //align with other object
