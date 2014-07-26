@@ -8,28 +8,59 @@
 
 #include <MB/fpmanipulator.h>
 #include <iostream>
+#include <osgUtil/LineSegmentIntersector>
+#include <osgViewer/View>
+
 
 using namespace mb;
 
-FirstPersonManipulator::FirstPersonManipulator(){
-    //_mouse.set(450, 450);
+FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Body*> *b) : camera(cam) ,selectableBodies(b) {
+
     translationFactor = 2;
     _mouvement.set(0,0,0);
     deltaTZ = 0;
     deltaRX = 0;
     deltaRY = 0;
     offsetScreen = 50.0;
+
+    screenCenter.set(0, 0);
+
+    selected = new bool[selectableBodies->size()]();
+    memset(selected,0,selectableBodies->size()*sizeof(bool));
+    active = new bool[selectableBodies->size()]();
+    memset(active,0,selectableBodies->size()*sizeof(bool));
+    inactiveCounter = new int[selectableBodies->size()]();
+    memset(inactiveCounter,0,selectableBodies->size()*sizeof(int));
 }
 
+FirstPersonManipulator::~FirstPersonManipulator() {
+    if (selected) {
+            delete [] selected;
+    }
+
+    if (active) {
+            delete [] active;
+    }
+
+    if (inactiveCounter) {
+            delete [] inactiveCounter;
+    }
+
+}
+
+
 bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &us){
-    
-// at frame rendering, GUIEventAdapter::FRAME is thrown here, so we apply detected movements between two
-// frames at this moment. When a frame is not being rendered, we save all movements detected in
-// "_mouvement" et deltaTZ for translation,deltaRX and deltaRY for rotation of the camera.
-    
+
+//    static int counter = 0;
+//    std::cout << " MANIP: " << counter++ << std::endl;
+
+    static bool grabbed = false;
+
+    bool frameEvent = false;
     switch (ea.getEventType()) {
-            
-        case osgGA::GUIEventAdapter::FRAME :
+        // at frame rendering, GUIEventAdapter::FRAME is thrown here, so we apply detected movements between two frames at this moment. When a frame is not being rendered, we save all movements detected in "_mouvement" et deltaTZ for translation,deltaRX and deltaRY for rotation of the camera.
+
+        case osgGA::GUIEventAdapter::FRAME :{
             
             _eye+= _rotation * _mouvement;
             _eye += osg::Vec3d(0,0,deltaTZ);
@@ -37,8 +68,11 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             deltaTZ = 0;
             deltaRX = 0;
             deltaRY = 0;
-            
+            frameEvent = true;
+
+
             break;
+        }
             
         //handling keyboard events
         case osgGA::GUIEventAdapter::KEYDOWN :
@@ -47,53 +81,51 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
                 case 'w':
                 case 'W':
                     _mouvement.set(_mouvement.x(), _mouvement.y(),-translationFactor);
-                    return false;
                     break;
                 case 'a':
                 case 'A':
                     _mouvement.set(-translationFactor, _mouvement.y(),_mouvement.z());
-                    return false;
                     break;
                 case 's':
                 case 'S':
                     _mouvement.set(_mouvement.x(), _mouvement.y(),translationFactor);
-                    return false;
                     break;
                 case 'd':
                 case 'D':
                     _mouvement.set(translationFactor, _mouvement.y(),_mouvement.z());
-                    return false;
                     break;
             }
-        }
             break;
+
+        }
         case osgGA::GUIEventAdapter::KEYUP :
         {
             switch (ea.getKey()) {
                 case 'w':
                 case 'W':
-                    if(_mouvement.z()==-translationFactor)_mouvement.set(_mouvement.x(), _mouvement.y(),0);
-                    return false;
+                    if(_mouvement.z()==-translationFactor)
+                        _mouvement.set(_mouvement.x(), _mouvement.y(),0);
                     break;
                 case 'a':
                 case 'A':
-                    if(_mouvement.x()==-translationFactor)_mouvement.set(0, _mouvement.y(),_mouvement.z());
-                    return false;
+                    if(_mouvement.x()==-translationFactor)
+                        _mouvement.set(0, _mouvement.y(),_mouvement.z());
                     break;
                 case 's':
                 case 'S':
-                    if(_mouvement.z()==translationFactor)_mouvement.set(_mouvement.x(), _mouvement.y(),0);
-                    return false;
+                    if(_mouvement.z()==translationFactor)
+                        _mouvement.set(_mouvement.x(), _mouvement.y(),0);
                     break;
                 case 'd':
                 case 'D':
-                    if(_mouvement.x()==translationFactor)_mouvement.set(0, _mouvement.y(),_mouvement.z());
-                    return false;
+                    if(_mouvement.x()==translationFactor)
+                        _mouvement.set(0, _mouvement.y(),_mouvement.z());
                     break;
             }
         }
             break;
         //handling mouse movement events
+        case osgGA::GUIEventAdapter::DRAG:
         case osgGA::GUIEventAdapter::MOVE:
         {
 
@@ -149,20 +181,53 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
                 us.requestWarpPointer(newMouseXPosition, ea.getWindowHeight() - newMouseYPosition);
             }
 
-            return false;
-
-        }
             break;
+        }
         case osgGA::GUIEventAdapter::SCROLL :
         {
             deltaTZ += ea.getScrollingDeltaY();
-            return false;
+            break;
         }
+        case osgGA::GUIEventAdapter::PUSH: {
+            if (selectedBody) {
+                grabbed = true;
+                grabbedBody = selectedBody;
+                selectedBody->setAngularVelocity(0, 0, 0);
+
+                static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
+                _rotationGrab =  selectedBody->getOrientationQuat() * (corr * _rotation).conj();
+            }
+            break;
+        }
+        case osgGA::GUIEventAdapter::RELEASE:
+            if (grabbedBody && grabbed) {
+                grabbed = false;
+
+                double lv[3];
+                grabbedBody->getLinearVelocity(&lv[0]);
+                grabbedBody->setLinearVelocity(lv[0]*0.1, lv[1]*0.1, lv[2]*0.1);
+                grabbedBody->enablePBody();
+                grabbedBody = nullptr;
+            }
             break;
         default:
             break;
     }
-    
+
+    //update the screen center
+    if (!frameEvent) {
+        screenCenter.set(ea.getWindowWidth()>>1,ea.getWindowHeight()>>1);
+    }
+
+    osgViewer::View* view = dynamic_cast<osgViewer::View*>(&us);
+    if (view) {
+        checkSelectables(view, &ea);
+    }
+    if (grabbedBody && grabbed) {
+        updateGrabbed();
+    }
+
+
     return false;
 }
 
@@ -189,6 +254,16 @@ void FirstPersonManipulator::getTransformation( osg::Vec3d& eye, osg::Quat& rota
 
 void FirstPersonManipulator::getTransformation( osg::Vec3d& eye, osg::Vec3d& center, osg::Vec3d& up ) const {
     std::cout << "mouse get B transform" << std::endl;
+}
+
+//Get position
+osg::Vec3 FirstPersonManipulator::getPosition() {
+    return _eye;
+}
+
+//Get position
+osg::Quat FirstPersonManipulator::getOrientation() {
+    return _rotation;
 }
 
 /** set the position of the matrix manipulator using a 4x4 Matrix.*/
@@ -219,3 +294,106 @@ osg::Matrixd FirstPersonManipulator::getMatrix() const {
 osg::Matrixd FirstPersonManipulator::getInverseMatrix() const{
     return osg::Matrixd::translate( -_eye ) * osg::Matrixd::rotate(  _rotation.inverse() );
 };
+
+//invoked to reposition the camera and to updated any grabbed object maintained with it
+void FirstPersonManipulator::checkSelectables(osgViewer::View* view,const osgGA::GUIEventAdapter *ea) {
+
+    osgUtil::LineSegmentIntersector::Intersections intersections;
+    pointerInfo.reset();
+
+    //Verify if there are intersections
+    memset(selected,0,selectableBodies->size()*sizeof(bool));
+
+    if (view->computeIntersections(screenCenter.x(), screenCenter.y(), intersections)) {
+        pointerInfo.setCamera(camera);
+        pointerInfo.setMousePosition(ea->getWindowWidth()>>1, ea->getWindowHeight()>>1);
+
+
+        for (osgUtil::LineSegmentIntersector::Intersections::iterator interIter = intersections.begin(); interIter != intersections.end(); ++interIter) {
+            pointerInfo.addIntersection(interIter->nodePath, interIter->getLocalIntersectPoint());
+        }
+
+
+
+        bool mustBreak = false;
+
+        for (auto &it : pointerInfo._hitList) {
+            for (osg::NodePath::iterator npIter = it.first.begin(); npIter != it.first.end(); ++npIter) {
+
+                if (osg::Geode* geo = dynamic_cast<osg::Geode*>(*npIter)) {
+
+
+                    for( int i = 0 ; i < selectableBodies->size(); ++i) {
+                        if((*selectableBodies)[i]->getGeode() == geo) {
+
+//                            if(((*selectableBodies)[i]->getPosition() - _eye).length() <= 200) {
+                                (*selectableBodies)[i]->activateBB();
+                                selected[i] = true;
+                                inactiveCounter[i] = 0;
+                                active[i] = true;
+                                mustBreak = true;
+                                selectedBody = (*selectableBodies)[i];
+//                            }
+                            break;
+                        }
+                    }
+
+                    if (mustBreak)
+                        break;
+
+                }
+            }
+
+            if (mustBreak)
+                break;
+        }
+
+        //no break means no selectable body found
+        if(!mustBreak)
+            selectedBody = nullptr;
+
+    }
+
+    for(int i = 0; i < selectableBodies->size(); ++i) {
+        if(!selected[i] && active[i]) {
+            if(++inactiveCounter[i] > 0) {
+                (*selectableBodies)[i]->removeBB();
+                active[i] = false;
+            }
+        }
+    }
+}
+
+void FirstPersonManipulator::updateGrabbed() {
+    //Compute the relative distance
+    osg::Vec3 pos = _eye + _rotation * osg::Vec3(0,0,-30);
+
+    //Fix it once it's close
+    if(!grabbedBody->isPBodyEnabled() ||(pos - grabbedBody->getPosition()).length() < 2 ) {
+        grabbedBody->disablePBody();
+        grabbedBody->setPosition(pos.x(), pos.y(), pos.z());
+        grabbedBody->setLinearVelocity(0, 0, 0);
+    } else {
+        //Gravity gun style
+        static float powerfactor = 4; // Higher values causes the targets moving faster to the holding point.
+        static float maxVel = 800;      // Lower values prevent objects flying through walls.
+
+
+        osg::Vec3 v = pos - grabbedBody->getPosition(); // direction to move the Target
+        v *= powerfactor; // powerfactor of the GravityGun
+
+        if ( v.length() > maxVel )
+        {
+            // if the correction-velocity is bigger than maximum
+            v.normalize();
+            v *= maxVel; // just set correction-velocity to the maximum
+        }
+        grabbedBody->setLinearVelocity(v.x(), v.y(), v.z());
+    }
+    grabbedBody->setAngularVelocity(0, 0, 0);
+
+    static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
+    osg::Quat q1 = _rotationGrab * corr * _rotation ;
+    grabbedBody->setOrientationQuat(q1.x(), q1.y(), q1.z(), q1.w());
+}
+

@@ -26,6 +26,29 @@ Body::Body(osg::Geode* geode) : Object(geode) {
     initialize();
 }
 
+//enable dinamical properties of the body
+void Body::enablePBody() {
+    if(pBody)
+        dBodyEnable(pBody);
+}
+
+//disables dinamical properties of the body
+void Body::disablePBody() {
+    if(pBody)
+        dBodyDisable(pBody);
+}
+
+//checks if pBody is enabled
+bool Body::isPBodyEnabled() {
+    if(pBody)
+        return (bool) dBodyIsEnabled(pBody);
+    else
+        return false;
+}
+
+//disables dinamical properties of the body
+void disablePBody();
+
 void Body::initialize() {
     pBody = nullptr;
     pGeom = nullptr;
@@ -271,11 +294,21 @@ double Body::getLinearSpeed() {
     return sqrt(lv[0] * lv[0] + lv[1] * lv[1] + lv[2] * lv[2]);
 };
 
-//Get Orientation Mat
+//Get Orientation Quat
 osg::Matrix Body::getOrientationMat() {
     osg::Matrix out;
     (gPAT->getAttitude()).get(out);
     return out;
+}
+
+//Get Orientation Mat
+osg::Quat Body::getOrientationQuat() {
+    return gPAT->getAttitude();
+};
+
+//Get Position
+osg::Vec3 Body::getPosition() {
+    return gPAT->getPosition();
 }
 
 void Body::setAngularVelocity(double x, double y, double z) {
@@ -286,6 +319,12 @@ void Body::setAngularVelocity(double x, double y, double z) {
 void Body::setLinearVelocity(double x, double y, double z) {
     if(pBody)
         dBodySetLinearVel(pBody, x, y, z);
+}
+
+//Set linear acceleration
+void Body::setLinearAcceleration(double x, double y, double z) {
+    if(pBody)
+        dBodySetForce(pBody, (dReal)x, (dReal)y, (dReal)z);
 }
 
 void Body::setOrientationQuat(double x, double y, double z, double w) {

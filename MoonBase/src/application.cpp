@@ -16,12 +16,11 @@ Application::Application()
 Application::~Application()
 {
 	//FIXME
-//	delete [] cubes;
     delete loader;
     delete loader2;
     delete marsSurface;
     delete moscatel;
-
+    delete hud;
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -109,12 +108,10 @@ void Application::setPhysics() {
 
 void Application::renderLoop() {
 
-//    camManip = new osgGA::TrackballManipulator();
-    camManip = new mb::FirstPersonManipulator();
-	viewer.setCameraManipulator(camManip);
 
+    //needs to be invoked here!
     camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
-    
+
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
@@ -125,7 +122,8 @@ void Application::renderLoop() {
 		dJointGroupEmpty(pCollisionJG);
 
 		//Update our objects
-//        moscatel->update();
+        moscatel->update();
+        moscatelTBRot->update();
 //        if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
 //            moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
 //            moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
@@ -151,8 +149,9 @@ void Application::populateScene() {
     marsSurface->initCollision(pSpace);
 
 
+
     moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
-//    moscatel->initPhysics(pWorld, pSpace, 2);
+    moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
     selectableObjects.push_back(moscatel);
 
@@ -170,11 +169,8 @@ void Application::populateScene() {
     root->addChild(marsSurface->getPAT());
     root->addChild(moscatel->getPAT());
     root->addChild(moscatelTBRot->getPAT());
+    root->addChild(hud->init());
     viewer.setSceneData(root.get());
-
-    //Subscribe object
-    viewer.addEventHandler(new mb::KeyboardEventHandler(this));
-    viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects));
 }
 
 void Application::setGraphicsContext() {
@@ -200,10 +196,17 @@ void Application::setGraphicsContext() {
 	// add this slave camera to the viewer, with a shift left of the projection matrix
     viewer.addSlave(camera.get());
 
+    //Camera manipulator
+    camManip = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
+    
+    //Subscribe object
+    viewer.setCameraManipulator(camManip);
+    viewer.addEventHandler(new mb::KeyboardEventHandler(this));
 
-    //Place the camera
-    camera->setViewMatrixAsLookAt(osg::Vec3d(0,-2,1), osg::Vec3d(0,0,0), osg::Vec3d(0,1,0));
-
+    //HUD
+    hud = new mb::Hud();
+    hud->setScreenDimensions(traits->height, traits->width);
+    
 }
 
 void Application::hideCursor(){

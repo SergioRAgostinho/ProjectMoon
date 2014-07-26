@@ -11,6 +11,8 @@
 
 #include <osgGA/StandardManipulator>
 #include <osgViewer/GraphicsWindow>
+#include <osgManipulator/Dragger>
+#include <MB/body.h>
 
 namespace mb {
     class FirstPersonManipulator : public osgGA::StandardManipulator {
@@ -18,8 +20,10 @@ namespace mb {
         osg::Vec3d _eye;
         osg::Quat _rotation;
 
-        osg::Vec2d _mouse;
+        osg::Vec3 _eyeGrab;
+        osg::Quat _rotationGrab;
 
+        osg::Vec2d _mouse;
         osg::Vec3d _mouvement;
         
         double translationFactor;
@@ -28,14 +32,36 @@ namespace mb {
         double deltaRY;
         
         double offsetScreen;
+
+        //brought in from mouse event
+        osgManipulator::PointerInfo pointerInfo;
+        osg::Vec2 screenCenter;
+        osg::Camera* camera;
+        std::vector<Body*> *selectableBodies;
+        Body* selectedBody = nullptr;
+        Body* grabbedBody = nullptr;
+        bool *selected, *active;
+        int *inactiveCounter;
+
+
+        //invoked to reposition the camera and to updated any grabbed object maintained with it
+        void checkSelectables(osgViewer::View* view, const osgGA::GUIEventAdapter *ea);
+        void updateGrabbed();
         
     public:
-        FirstPersonManipulator();
+        FirstPersonManipulator(osg::Camera* cam, std::vector<Body*> *b);
+        ~FirstPersonManipulator();
 
         void setTransformation( const osg::Vec3d& eye, const osg::Quat& rotation );
         void setTransformation( const osg::Vec3d& eye, const osg::Vec3d& center, const osg::Vec3d& up );
         void getTransformation( osg::Vec3d& eye, osg::Quat& rotation ) const;
         void getTransformation( osg::Vec3d& eye, osg::Vec3d& center, osg::Vec3d& up ) const;
+
+        //Get position
+        osg::Vec3 getPosition();
+
+        //Get position
+        osg::Quat getOrientation();
 
         /** set the position of the matrix manipulator using a 4x4 Matrix.*/
         void setByMatrix(const osg::Matrixd& matrix);
