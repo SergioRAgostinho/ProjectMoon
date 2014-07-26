@@ -16,12 +16,11 @@ Application::Application()
 Application::~Application()
 {
 	//FIXME
-//	delete [] cubes;
     delete loader;
     delete loader2;
     delete marsSurface;
     delete moscatel;
-
+    delete hud;
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -123,7 +122,8 @@ void Application::renderLoop() {
 		dJointGroupEmpty(pCollisionJG);
 
 		//Update our objects
-//        moscatel->update();
+        moscatel->update();
+        moscatelTBRot->update();
 //        if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
 //            moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
 //            moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
@@ -151,7 +151,7 @@ void Application::populateScene() {
 
 
     moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
-//    moscatel->initPhysics(pWorld, pSpace, 2);
+    moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
     selectableObjects.push_back(moscatel);
 
@@ -197,13 +197,11 @@ void Application::setGraphicsContext() {
     viewer.addSlave(camera.get());
 
     //Camera manipulator
-    camManip = new mb::FirstPersonManipulator();
-
+    camManip = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
     
     //Subscribe object
     viewer.setCameraManipulator(camManip);
     viewer.addEventHandler(new mb::KeyboardEventHandler(this));
-    viewer.addEventHandler(new mb::MouseEventHandler(camera.get(), &selectableObjects, dynamic_cast<mb::FirstPersonManipulator*>(camManip.get())));
 
     //HUD
     hud = new mb::Hud();

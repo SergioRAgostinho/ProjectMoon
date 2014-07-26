@@ -66,6 +66,12 @@ namespace mb {
         Body* clone();
         Body* clone(int nClones);
 
+        //enable dinamical properties of the body
+        void enablePBody();
+
+        //disables dinamical properties of the body
+        void disablePBody();
+
         //Initialize only the collision geometry
         void initCollision(dSpaceID space);
 

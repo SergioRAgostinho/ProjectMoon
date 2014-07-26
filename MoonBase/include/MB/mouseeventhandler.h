@@ -16,24 +16,14 @@
 #include <MB/fpmanipulator.h>
 
 namespace mb {
-
+    //To be used only when the mouse button has nothing to do with the camera
     class MouseEventHandler : public osgGA::GUIEventHandler {
 
-        osgManipulator::PointerInfo pointerInfo;
-        osg::Camera* camera;
-        std::vector<Body*> *selectableBodies;
-        bool *selected, *active;
-        int *inactiveCounter;
+
 
         FirstPersonManipulator *camManip;
 
     public:
-
-        MouseEventHandler(osg::Camera* cam);
-        MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b);
-        MouseEventHandler(osg::Camera* cam, std::vector<Body*> *b, FirstPersonManipulator* cM);
-
-        ~MouseEventHandler();
 
         //the event handler
         bool handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa, osg::Object * object, osg::NodeVisitor * node);

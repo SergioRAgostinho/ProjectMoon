@@ -26,6 +26,21 @@ Body::Body(osg::Geode* geode) : Object(geode) {
     initialize();
 }
 
+//enable dinamical properties of the body
+void Body::enablePBody() {
+    if(pBody)
+        dBodyEnable(pBody);
+}
+
+//disables dinamical properties of the body
+void Body::disablePBody() {
+    if(pBody)
+        dBodyDisable(pBody);
+}
+
+//disables dinamical properties of the body
+void disablePBody();
+
 void Body::initialize() {
     pBody = nullptr;
     pGeom = nullptr;
