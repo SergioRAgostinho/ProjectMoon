@@ -10,6 +10,7 @@
 #include <iostream>
 #include <osgUtil/LineSegmentIntersector>
 #include <osgViewer/View>
+#include <MB/utils.hpp>
 
 
 using namespace mb;
@@ -55,6 +56,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
 //    std::cout << " MANIP: " << counter++ << std::endl;
 
     static bool grabbed = false;
+    static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
 
     bool frameEvent = false;
     switch (ea.getEventType()) {
@@ -192,22 +194,23 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             if (selectedBody) {
                 grabbed = true;
                 grabbedBody = selectedBody;
-                selectedBody->setAngularVelocity(0, 0, 0);
+                grabbedBody->setAngularVelocity(0, 0, 0);
 
-                static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
-                _rotationGrab =  selectedBody->getOrientationQuat() * (corr * _rotation).conj();
+                _rotationGrab =  grabbedBody->getOrientationQuat() * (corr * _rotation).conj();
             }
             break;
         }
         case osgGA::GUIEventAdapter::RELEASE:
             if (grabbedBody && grabbed) {
                 grabbed = false;
+                align = false;
 
                 double lv[3];
                 grabbedBody->getLinearVelocity(&lv[0]);
                 grabbedBody->setLinearVelocity(lv[0]*0.1, lv[1]*0.1, lv[2]*0.1);
                 grabbedBody->enablePBody();
                 grabbedBody = nullptr;
+                alignRef = nullptr;
             }
             break;
         default:
@@ -219,14 +222,62 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         screenCenter.set(ea.getWindowWidth()>>1,ea.getWindowHeight()>>1);
     }
 
+
     osgViewer::View* view = dynamic_cast<osgViewer::View*>(&us);
     if (view) {
         checkSelectables(view, &ea);
     }
+
     if (grabbedBody && grabbed) {
         updateGrabbed();
-    }
+        static osg::Quat q_final;
+        static osg::Quat q_init;
+        static osg::Quat q;
 
+        if(alignRef) {
+
+            double dist = (grabbedBody->getPosition() - alignRef->getPosition()).length();
+            if (dist > 50) {
+                alignRef = nullptr;
+                align = false;
+                q = q_final = q_init = osg::Quat();
+            } else if (dist > 48 && dist <= 50) {
+                q.slerp(0, q_init, q_final);
+                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+            } else if (dist > 46 && dist <= 48) {
+                q.slerp(0.2, q_init, q_final);
+                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+            } else if (dist > 44 && dist <= 46) {
+                q.slerp(0.4, q_init, q_final);
+                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+            } else if (dist > 42 && dist <= 44) {
+                q.slerp(0.6, q_init, q_final);
+                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+            } else if (dist > 40 && dist <= 42) {
+                q.slerp(0.8, q_init, q_final);
+                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+            } else {
+                grabbedBody->setOrientationQuat(q_final.x(), q_final.y(), q_final.z(), q_final.w());
+            }
+
+
+        } else {
+            for (auto bd : *selectableBodies) {
+                if (bd != grabbedBody && (grabbedBody->getPosition() - bd->getPosition()).length() <= 50) {
+
+                    q_init = grabbedBody->getOrientationQuat();
+                    q_final = grabbedBody->align(bd);
+                    alignRef = bd;
+                    align = true;
+                    break;
+                }
+            }
+        }
+    }
+//    else {
+//        alignRef = nullptr;
+//        align = false;
+//    }
 
     return false;
 }
@@ -375,25 +426,26 @@ void FirstPersonManipulator::updateGrabbed() {
         grabbedBody->setLinearVelocity(0, 0, 0);
     } else {
         //Gravity gun style
-        static float powerfactor = 4; // Higher values causes the targets moving faster to the holding point.
-        static float maxVel = 800;      // Lower values prevent objects flying through walls.
+        static float powerfactor = 4;
+        static float maxVel = 800;
 
-
-        osg::Vec3 v = pos - grabbedBody->getPosition(); // direction to move the Target
-        v *= powerfactor; // powerfactor of the GravityGun
+        osg::Vec3 v = pos - grabbedBody->getPosition();
+        v *= powerfactor;
 
         if ( v.length() > maxVel )
         {
             // if the correction-velocity is bigger than maximum
             v.normalize();
-            v *= maxVel; // just set correction-velocity to the maximum
+            v *= maxVel;
         }
         grabbedBody->setLinearVelocity(v.x(), v.y(), v.z());
     }
     grabbedBody->setAngularVelocity(0, 0, 0);
 
-    static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
-    osg::Quat q1 = _rotationGrab * corr * _rotation ;
-    grabbedBody->setOrientationQuat(q1.x(), q1.y(), q1.z(), q1.w());
+    if(!align) {
+        static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
+        osg::Quat q1 = _rotationGrab * corr * _rotation ;
+        grabbedBody->setOrientationQuat(q1.x(), q1.y(), q1.z(), q1.w());
+    }
 }
 

@@ -23,6 +23,9 @@ set(handle(3),'Color',color/8);
 grid on
 campos([2,1,2]);
 axis equal
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
 hold off
 
 figure(gcf)

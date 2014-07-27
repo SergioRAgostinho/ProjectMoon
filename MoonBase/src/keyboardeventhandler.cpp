@@ -18,8 +18,8 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
 
     Body* body = app->moscatelTBRot;
 
-//    static int counter = 0;
-//    std::cout << " KEY: " << counter++ << std::endl;
+    //    static int counter = 0;
+    //    std::cout << " KEY: " << counter++ << std::endl;
 
     switch (ea.getEventType()) {
         case osgGA::GUIEventAdapter::KEYUP:
@@ -43,6 +43,13 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
                     osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
                     osg::Quat q = rot.getRotate();
                     body->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
+                    break;
+                }
+                case 'z':
+                case 'Z': {
+                    static bool enable = true;
+                    enable? body->disablePBody() : body->enablePBody();
+                    enable = !enable;
                     break;
                 }
                 default:

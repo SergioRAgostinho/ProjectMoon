@@ -116,6 +116,7 @@ void Application::renderLoop() {
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
         hideCursor();
+
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
@@ -124,12 +125,6 @@ void Application::renderLoop() {
 		//Update our objects
         moscatel->update();
         moscatelTBRot->update();
-//        if (moscatel->getLinearSpeed() < 0.01 && moscatel->getAngularSpeed() < 0.01) {
-//            moscatel->setPosition(mb::uniRand(-120, 120), mb::uniRand(-120, 120), mb::uniRand(180, 320));
-//            moscatel->setLinearVelocity(mb::uniRand(-10, 10),mb::uniRand(-10, 10),mb::uniRand(-10, 10));
-//            moscatel->setAngularVelocity(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-//        }
-
 
 		//Renders frame
 		viewer.frame();
@@ -151,17 +146,21 @@ void Application::populateScene() {
 
 
     moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
-    moscatel->initPhysics(pWorld, pSpace, 2);
     moscatel->setPosition(60, 0, 60);
-    selectableObjects.push_back(moscatel);
-
-    moscatelTBRot = moscatel->clone();
-    moscatelTBRot->setPosition(50, 0, 60);
     osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
     axis.normalize();
     osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
     osg::Quat q = rot.getRotate();
-    moscatelTBRot->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
+    moscatel->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
+    moscatel->activateBB();
+    moscatel->togglePermBB();
+    selectableObjects.push_back(moscatel);
+
+    moscatelTBRot = moscatel->clone();
+    moscatelTBRot->initPhysics(pWorld, pSpace, 2);
+    moscatelTBRot->setPosition(50, 0, 60);
+    moscatelTBRot->activateBB();
+    moscatelTBRot->togglePermBB();
     selectableObjects.push_back(moscatelTBRot);
 
     //Add to root
