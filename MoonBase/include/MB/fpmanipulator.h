@@ -40,6 +40,8 @@ namespace mb {
         std::vector<Body*> *selectableBodies;
         Body* selectedBody = nullptr;
         Body* grabbedBody = nullptr;
+        Body* alignRef = nullptr;
+        bool align = false;
         bool *selected, *active;
         int *inactiveCounter;
 

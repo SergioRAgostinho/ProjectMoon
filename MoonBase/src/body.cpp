@@ -61,6 +61,7 @@ void Body::initialize() {
     gGeode = gNode->asGeode();
     gBB = new osg::Geode();
     gBBState = false;
+    gPermBB = false;
 
     //bounding box stuff
     osg::BoundingBox bb = gGeode->getBoundingBox();
@@ -84,11 +85,13 @@ Body::Body(dWorldID w, dSpaceID s) : Object(new osg::Geode()) {
 
 Body::~Body() {}
 
-void Body::align(mb::Body *ref) {
+osg::Quat Body::align(mb::Body *ref) {
 
     osg::Matrix R_new;
     osg::Matrix R = ref->getOrientationMat();
     osg::Matrix A = this->getOrientationMat();
+
+    //Rows not collums!!!!!!
 
     int max_idx[3] = {-1,-1,-1};
     int max_sign[3] = {};
@@ -113,7 +116,7 @@ void Body::align(mb::Body *ref) {
                 continue;
             }
 
-            double innerProd = R(0,j)*A(0,i) + R(1,j)*A(1,i) + R(2,j)*A(2,i);
+            double innerProd = R(j,0)*A(i,0) + R(j,1)*A(i,1) + R(j,2)*A(i,2);
             inner_sign[j] = mb::sgn(innerProd);
             inner_prod[j] = std::abs(innerProd);
         }
@@ -128,12 +131,12 @@ void Body::align(mb::Body *ref) {
             }
         }
 
-        R_new(0,i) = max_sign[i] * R(0,max_idx[i]);
-        R_new(1,i) = max_sign[i] * R(1,max_idx[i]);
-        R_new(2,i) = max_sign[i] * R(2,max_idx[i]);
+        R_new(i,0) = max_sign[i] * R(max_idx[i],0);
+        R_new(i,1) = max_sign[i] * R(max_idx[i],1);
+        R_new(i,2) = max_sign[i] * R(max_idx[i],2);
     }
 
-    setOrientationMat(R_new);
+    return R_new.getRotate();
 }
 
 //FIXME: we're gonna need smart pointers for this because if the original mb::Body gets destroyed, everything will fall through
@@ -432,7 +435,7 @@ bool Body::triOGS2ODE() {
 }
 
 void Body::activateBB() {
-    if (gBBState)
+    if (gBBState || gPermBB)
         return;
 
     gPAT->addChild(gBB.get());
@@ -440,7 +443,7 @@ void Body::activateBB() {
 }
 
 void Body::removeBB() {
-    if (!gBBState)
+    if (!gBBState || gPermBB)
         return;
 
     gPAT->removeChild(gBB.get());
@@ -448,10 +451,18 @@ void Body::removeBB() {
 }
 
 void Body::toggleBB() {
+    if(gPermBB)
+        return;
+
     if (gBBState)
         gPAT->removeChild(gBB.get());
     else
         gPAT->addChild(gBB.get());
 
     gBBState = !gBBState;
+}
+
+//Toggle permanent BB state
+void Body::togglePermBB() {
+    gPermBB = !gPermBB;
 }

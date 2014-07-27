@@ -29,6 +29,8 @@ namespace mb {
         void initMass(dMass* mass);
         void initMass(dMass* mass, double kg);
 
+
+
     protected:
 
         //Physic engine identities
@@ -45,6 +47,7 @@ namespace mb {
         osg::ref_ptr<osg::Geode> gBB;
 
         bool gBBState;
+        bool gPermBB;
 
         //Members
         void initialize();
@@ -60,7 +63,7 @@ namespace mb {
         ~Body();
 
         //Align the current body with the provided one
-        void align(Body* ref);
+        osg::Quat align(Body* ref);
 
         //return a clone/clones
         Body* clone();
@@ -147,6 +150,10 @@ namespace mb {
 
         //Toggle bounding box drawing routines
         void toggleBB();
+
+        //Toggle permanent BB state
+        void togglePermBB();
+
     };
 
 }
