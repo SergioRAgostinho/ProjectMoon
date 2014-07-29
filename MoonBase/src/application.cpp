@@ -70,6 +70,23 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	dContact contact[N];
 	n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
 	if (n > 0) {
+
+        //Camera collision situation
+        mb::FirstPersonManipulator *cam = dynamic_cast<mb::FirstPersonManipulator*>(app->camManip.get());
+        dGeomID camID = cam->getGeomID();
+        if (o1 == camID || o2 == camID) {
+            static int counter = 0;
+            std::cout << "Camera colliding " << counter++ << std::endl;
+
+            //both static objects
+            if (b1 == nullptr && b2 == nullptr) {
+                //block and nullify last displacement
+                cam->toggleRevert();
+                return;
+            }
+        }
+
+
 		for (i = 0; i<n; i++) {
             contact[i].surface.mode = dContactBounce | dContactSoftCFM;
             contact[i].surface.mu = dInfinity;
@@ -110,25 +127,39 @@ void Application::renderLoop() {
 
 
     //needs to be invoked here!
-    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
+    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 30) );
 
+
+    viewer.init();
+    viewer.realize();
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
         hideCursor();
+
+        viewer.advance();
+        viewer.eventTraversal();
 
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
 
+        //Revert the camera movement if needed
+        if(man->checkRevert()) {
+            man->revertDisp();
+            man->toggleRevert();
+        }
+
 		//Update our objects
         moscatel->update();
         moscatelTBRot->update();
 
-		//Renders frame
-		viewer.frame();
+		//Renders frame decomposing this into all the required events to prevent camera from jittering on collision
+//		viewer.frame();
 
+        viewer.updateTraversal();
+        viewer.renderingTraversals();
 	}
 
 }
@@ -196,7 +227,9 @@ void Application::setGraphicsContext() {
     viewer.addSlave(camera.get());
 
     //Camera manipulator
-    camManip = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
+    man = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
+    man->initCollision(pSpace);
+    camManip = man;
     
     //Subscribe object
     viewer.setCameraManipulator(camManip);
