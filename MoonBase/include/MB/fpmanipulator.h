@@ -20,7 +20,7 @@ namespace mb {
         osg::Vec3d _eye;
         osg::Quat _rotation;
 
-        osg::Vec3d _prevEye;
+
 
         osg::Vec3 _eyeGrab;
         osg::Quat _rotationGrab;
@@ -39,6 +39,7 @@ namespace mb {
         dSpaceID pSpace;
         dGeomID pGeom;
         bool revert;
+        osg::Vec3d _revertEye;
 
         //brought in from mouse event
         osgManipulator::PointerInfo pointerInfo;
@@ -80,13 +81,19 @@ namespace mb {
         void initCollision(dSpaceID s, float colRadius);
 
         //Check the status on the revert flage
-        bool checkRevert();
+        void armRevert(double x, double y, double z);
 
-        //Revert last displacement
-        void revertDisp();
+//        //Check the status on the revert flage
+//        bool checkRevert();
 
-        //Trigger revert so that the camera reverts to the last position when exiting the collision function
-        void toggleRevert();
+        //Process an armed revert
+        void processRevert();
+
+//        //Revert last displacement
+//        void revertDisp();
+//
+//        //Trigger revert so that the camera reverts to the last position when exiting the collision function
+//        void toggleRevert();
 
         /** set the position of the matrix manipulator using a 4x4 Matrix.*/
         void setByMatrix(const osg::Matrixd& matrix);

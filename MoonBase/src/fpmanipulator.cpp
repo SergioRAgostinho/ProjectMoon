@@ -66,7 +66,6 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
 
         case osgGA::GUIEventAdapter::FRAME :{
 
-            _prevEye.set(_eye);
             _eye+= _rotation * _mouvement;
             _eye += osg::Vec3d(0,0,deltaTZ);
             dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
@@ -191,7 +190,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         }
         case osgGA::GUIEventAdapter::SCROLL :
         {
-            deltaTZ += ea.getScrollingDeltaY();
+            deltaTZ += 0.4 * ea.getScrollingDeltaY();
             break;
         }
         case osgGA::GUIEventAdapter::PUSH: {
@@ -295,7 +294,6 @@ void FirstPersonManipulator::setTransformation( const osg::Vec3d& eye, const osg
 
     // set variables
     osg::Matrixd m( osg::Matrixd::lookAt( eye, center, up ) );
-    _prevEye.set(_eye);
     _eye = eye;
     dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
     _rotation = m.getRotate().inverse();
@@ -338,26 +336,44 @@ void FirstPersonManipulator::initCollision(dSpaceID s, float colRadius) {
 }
 
 //Check the status on the revert flage
-bool FirstPersonManipulator::checkRevert() {
-    return revert;
+void FirstPersonManipulator::armRevert(double x, double y, double z) {
+    _revertEye.set(x,y,z);
+    revert = true;
 }
 
-//Revert last displacement
-void FirstPersonManipulator::revertDisp() {
-    _eye.set(_prevEye);
+////Check the status on the revert flage
+//bool FirstPersonManipulator::checkRevert() {
+//    return revert;
+//}
+
+//Process an armed revert
+void FirstPersonManipulator::processRevert() {
+    if (!revert) {
+        return;
+    }
+
+    _eye += _revertEye;
     dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+    _revertEye.set(0,0,0);
+    revert = false;
+
 }
 
-//Trigger revert so that the camera reverts to the last position when exiting the collision function
-void FirstPersonManipulator::toggleRevert() {
-    revert = !revert;
-}
+////Revert last displacement
+//void FirstPersonManipulator::revertDisp() {
+//    _eye.set(_prevEye);
+//    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+//}
+//
+////Trigger revert so that the camera reverts to the last position when exiting the collision function
+//void FirstPersonManipulator::toggleRevert() {
+//    revert = !revert;
+//}
 
 /** set the position of the matrix manipulator using a 4x4 Matrix.*/
 void FirstPersonManipulator::setByMatrix(const osg::Matrixd& matrix){
 
     // set variables
-    _prevEye.set(_eye);
     _eye = matrix.getTrans();
     dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
     _rotation = matrix.getRotate();
