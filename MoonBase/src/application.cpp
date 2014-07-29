@@ -25,7 +25,7 @@ Application::~Application()
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
 	dThreadingFreeThreadPool(pSolverThreadPool);
-	dWorldSetStepThreadingImplementation(pWorld, NULL, NULL); 
+	dWorldSetStepThreadingImplementation(pWorld, NULL, NULL);
 	dThreadingFreeImplementation(pSolverThreading);
 
 	//Destroy collision group
@@ -33,7 +33,7 @@ Application::~Application()
 
 	//Destroy colision space and sim world
 	dSpaceDestroy(pSpace);
-	dWorldDestroy(pWorld); 
+	dWorldDestroy(pWorld);
 
 	//Close library
 	dCloseODE();
@@ -57,7 +57,7 @@ int Application::run()
 }
 
 void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
-	
+
 	int i, n;
 	dBodyID b1 = dGeomGetBody(o1);
 	dBodyID b2 = dGeomGetBody(o2);
@@ -70,6 +70,42 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	dContact contact[N];
 	n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
 	if (n > 0) {
+        ////////////////////////////
+        //Camera collision situation
+        /////////////////////////////
+
+        mb::FirstPersonManipulator *cam = dynamic_cast<mb::FirstPersonManipulator*>(app->camManip.get());
+        dGeomID camID = cam->getGeomID();
+        if (o1 == camID || o2 == camID) {
+
+            //both static objects
+            if (b1 == nullptr && b2 == nullptr) {
+
+                //Find the normal more burried into the object
+                double depth = 0;
+                int iMaxDepth = -1;
+                for (i = 0; i<n; ++i) {
+                    double testDepth = (double) contact[i].geom.depth;
+                    if (testDepth > depth) {
+                        depth = testDepth;
+                        iMaxDepth = i;
+                    }
+                }
+
+                int sign;
+                (camID == contact[iMaxDepth].geom.g2)? sign = -1 : sign = 1;
+                cam->armRevert((double) sign * depth * contact[iMaxDepth].geom.normal[0],
+                               (double) sign * depth * contact[iMaxDepth].geom.normal[1],
+                               (double) sign * depth * contact[iMaxDepth].geom.normal[2]);
+
+                return;
+            }
+        }
+
+        /////////////////////////
+        /// Remaining stuff
+        /////////////////////////
+
 		for (i = 0; i<n; i++) {
             contact[i].surface.mode = dContactBounce | dContactSoftCFM;
             contact[i].surface.mu = dInfinity;
@@ -110,25 +146,36 @@ void Application::renderLoop() {
 
 
     //needs to be invoked here!
-    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 10) );
+    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 30) );
 
+
+    viewer.init();
+    viewer.realize();
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
         hideCursor();
 
+        viewer.advance();
+        viewer.eventTraversal();
+
 		//Physics update
-		dSpaceCollide(pSpace, (void*) this, &nearCallback); 
+		dSpaceCollide(pSpace, (void*) this, &nearCallback);
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
+
+        //Revert the camera movement if needed
+        man->processRevert();
 
 		//Update our objects
         moscatel->update();
         moscatelTBRot->update();
 
-		//Renders frame
-		viewer.frame();
+		//Renders frame decomposing this into all the required events to prevent camera from jittering on collision
+        //		viewer.frame();
 
+        viewer.updateTraversal();
+        viewer.renderingTraversals();
 	}
 
 }
@@ -196,8 +243,10 @@ void Application::setGraphicsContext() {
     viewer.addSlave(camera.get());
 
     //Camera manipulator
-    camManip = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
-    
+    man = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
+    man->initCollision(pSpace);
+    camManip = man;
+
     //Subscribe object
     viewer.setCameraManipulator(camManip);
     viewer.addEventHandler(new mb::KeyboardEventHandler(this));
@@ -205,7 +254,7 @@ void Application::setGraphicsContext() {
     //HUD
     hud = new mb::Hud();
     hud->setScreenDimensions(traits->height, traits->width);
-    
+
 }
 
 void Application::hideCursor(){

@@ -31,11 +31,13 @@ public:
 	//GUI Related stuff
 	osgViewer::Viewer viewer;
 	osg::ref_ptr<osgGA::CameraManipulator> camManip;
+    mb::FirstPersonManipulator *man;
 
 	//Graphical context and related traits
 	osg::ref_ptr<osg::GraphicsContext> gc;
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits;
     osg::ref_ptr<osg::Camera> camera;
+
 
 	//Optimizer
 	osgUtil::Optimizer optimizer;

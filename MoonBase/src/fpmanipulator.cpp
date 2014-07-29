@@ -32,6 +32,8 @@ FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Bod
     memset(active,0,selectableBodies->size()*sizeof(bool));
     inactiveCounter = new int[selectableBodies->size()]();
     memset(inactiveCounter,0,selectableBodies->size()*sizeof(int));
+
+    revert = false;
 }
 
 FirstPersonManipulator::~FirstPersonManipulator() {
@@ -63,9 +65,10 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         // at frame rendering, GUIEventAdapter::FRAME is thrown here, so we apply detected movements between two frames at this moment. When a frame is not being rendered, we save all movements detected in "_mouvement" et deltaTZ for translation,deltaRX and deltaRY for rotation of the camera.
 
         case osgGA::GUIEventAdapter::FRAME :{
-            
+
             _eye+= _rotation * _mouvement;
             _eye += osg::Vec3d(0,0,deltaTZ);
+            dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
             rotateYawPitch(_rotation, deltaRX * 0.001, deltaRY * 0.001, osg::Vec3(0,0,1));
             deltaTZ = 0;
             deltaRX = 0;
@@ -187,7 +190,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         }
         case osgGA::GUIEventAdapter::SCROLL :
         {
-            deltaTZ += ea.getScrollingDeltaY();
+            deltaTZ += 0.4 * ea.getScrollingDeltaY();
             break;
         }
         case osgGA::GUIEventAdapter::PUSH: {
@@ -292,6 +295,7 @@ void FirstPersonManipulator::setTransformation( const osg::Vec3d& eye, const osg
     // set variables
     osg::Matrixd m( osg::Matrixd::lookAt( eye, center, up ) );
     _eye = eye;
+    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
     _rotation = m.getRotate().inverse();
 
     //Fix vertical something
@@ -307,6 +311,11 @@ void FirstPersonManipulator::getTransformation( osg::Vec3d& eye, osg::Vec3d& cen
     std::cout << "mouse get B transform" << std::endl;
 }
 
+//Get the geometry id
+dGeomID FirstPersonManipulator::getGeomID() {
+    return pGeom;
+}
+
 //Get position
 osg::Vec3 FirstPersonManipulator::getPosition() {
     return _eye;
@@ -317,11 +326,56 @@ osg::Quat FirstPersonManipulator::getOrientation() {
     return _rotation;
 }
 
+//Init collision functionalities
+void FirstPersonManipulator::initCollision(dSpaceID s) {
+    initCollision(s, 20);
+}
+void FirstPersonManipulator::initCollision(dSpaceID s, float colRadius) {
+    pSpace = s;
+    pGeom = dCreateSphere(pSpace, (dReal) colRadius);
+}
+
+//Check the status on the revert flage
+void FirstPersonManipulator::armRevert(double x, double y, double z) {
+    _revertEye.set(x,y,z);
+    revert = true;
+}
+
+////Check the status on the revert flage
+//bool FirstPersonManipulator::checkRevert() {
+//    return revert;
+//}
+
+//Process an armed revert
+void FirstPersonManipulator::processRevert() {
+    if (!revert) {
+        return;
+    }
+
+    _eye += _revertEye;
+    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+    _revertEye.set(0,0,0);
+    revert = false;
+
+}
+
+////Revert last displacement
+//void FirstPersonManipulator::revertDisp() {
+//    _eye.set(_prevEye);
+//    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+//}
+//
+////Trigger revert so that the camera reverts to the last position when exiting the collision function
+//void FirstPersonManipulator::toggleRevert() {
+//    revert = !revert;
+//}
+
 /** set the position of the matrix manipulator using a 4x4 Matrix.*/
 void FirstPersonManipulator::setByMatrix(const osg::Matrixd& matrix){
 
     // set variables
     _eye = matrix.getTrans();
+    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
     _rotation = matrix.getRotate();
 
     //set the mouse to the center of screen
