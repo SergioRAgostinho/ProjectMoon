@@ -316,6 +316,11 @@ dGeomID FirstPersonManipulator::getGeomID() {
     return pGeom;
 }
 
+//Get the geometry id
+Body* FirstPersonManipulator::getGrabbedBody() {
+    return grabbedBody;
+}
+
 //Get position
 osg::Vec3 FirstPersonManipulator::getPosition() {
     return _eye;
@@ -341,11 +346,6 @@ void FirstPersonManipulator::armRevert(double x, double y, double z) {
     revert = true;
 }
 
-////Check the status on the revert flage
-//bool FirstPersonManipulator::checkRevert() {
-//    return revert;
-//}
-
 //Process an armed revert
 void FirstPersonManipulator::processRevert() {
     if (!revert) {
@@ -358,17 +358,6 @@ void FirstPersonManipulator::processRevert() {
     revert = false;
 
 }
-
-////Revert last displacement
-//void FirstPersonManipulator::revertDisp() {
-//    _eye.set(_prevEye);
-//    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
-//}
-//
-////Trigger revert so that the camera reverts to the last position when exiting the collision function
-//void FirstPersonManipulator::toggleRevert() {
-//    revert = !revert;
-//}
 
 /** set the position of the matrix manipulator using a 4x4 Matrix.*/
 void FirstPersonManipulator::setByMatrix(const osg::Matrixd& matrix){
@@ -473,17 +462,28 @@ void FirstPersonManipulator::updateGrabbed() {
     //Compute the relative distance
     osg::Vec3 pos = _eye + _rotation * osg::Vec3(0,0,-30);
 
+    _eyeGrab.set(grabbedBody->getPosition());
+
     //Fix it once it's close
-    if(!grabbedBody->isPBodyEnabled() ||(pos - grabbedBody->getPosition()).length() < 2 ) {
+    if(!grabbedBody->getRevert() && (!grabbedBody->isPBodyEnabled() ||(pos - _eyeGrab).length() < 2 )) {
         grabbedBody->disablePBody();
         grabbedBody->setPosition(pos.x(), pos.y(), pos.z());
         grabbedBody->setLinearVelocity(0, 0, 0);
     } else {
         //Gravity gun style
-        static float powerfactor = 4;
-        static float maxVel = 800;
+        float powerfactor = 4;
+        float maxVel = 800;
 
-        osg::Vec3 v = pos - grabbedBody->getPosition();
+        if(grabbedBody->getRevert()) {
+            grabbedBody->enablePBody();
+//            static int counter = 0;
+//            std::cout << "Revert " << counter++ << std::endl;
+            grabbedBody->setRevert(false);
+            powerfactor = 1;
+            maxVel = 1;
+        }
+
+        osg::Vec3 v = pos - _eyeGrab;
         v *= powerfactor;
 
         if ( v.length() > maxVel )
@@ -501,5 +501,10 @@ void FirstPersonManipulator::updateGrabbed() {
         osg::Quat q1 = _rotationGrab * corr * _rotation ;
         grabbedBody->setOrientationQuat(q1.x(), q1.y(), q1.z(), q1.w());
     }
+}
+
+//update the record of the object position
+void FirstPersonManipulator::updateGrabbedPos(osg::Vec3 pos) {
+    _eyeGrab.set(pos);
 }
 

@@ -63,6 +63,9 @@ void Body::initialize() {
     gBBState = false;
     gPermBB = false;
 
+    revert = false;
+    revertPos.set(0, 0, 0);
+
     //bounding box stuff
     osg::BoundingBox bb = gGeode->getBoundingBox();
     osg::ref_ptr<osg::ShapeDrawable> drawable = new osg::ShapeDrawable(new osg::Box(bb.center(),bb.xMax() - bb.xMin(),bb.yMax() - bb.yMin(),bb.zMax() - bb.zMin()));
@@ -138,6 +141,40 @@ osg::Quat Body::align(mb::Body *ref) {
 
     return R_new.getRotate();
 }
+
+//Check the status on the revert flage
+void Body::armRevert(double x, double y, double z) {
+    revertPos.set(x,y,z);
+    revert = true;
+}
+
+//get revert status
+bool Body::getRevert() { return revert; }
+
+//Process an armed revert
+bool Body::processRevert() {
+    if (!revert) {
+        return false;
+    }
+
+    //to account for situations where the fps manipulator might have screwed up
+    if (revertPos == osg::Vec3(0,0,0)) {
+        revert = false;
+        return false;
+    }
+
+    osg::Vec3 newPos = getPosition() + revertPos;
+    dGeomSetPosition(pGeom, (dReal) newPos.x(), (dReal) newPos.y(), (dReal) newPos.z());
+    revertPos.set(0,0,0);
+    //revert = false;   gonna disable this in fpsmanipulator
+    return true;
+}
+
+//set revert status
+void Body::setRevert(bool r) {
+    revert = r;
+};
+
 
 //FIXME: we're gonna need smart pointers for this because if the original mb::Body gets destroyed, everything will fall through
 Body* Body::clone() {
@@ -248,6 +285,9 @@ void Body::setTotalMass(double amount) {
 }
 
 osg::Geode* Body::getGeode() { return gGeode.get(); }
+
+//return the pGeom id
+dGeomID Body::getGeomID() { return pGeom; };
 
 void Body::setGeode(osg::Geode *geode) {
     gGeode = geode;

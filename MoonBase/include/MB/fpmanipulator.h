@@ -23,6 +23,7 @@ namespace mb {
 
 
         osg::Vec3 _eyeGrab;
+        osg::Vec3 _eyeDesiredGrab;
         osg::Quat _rotationGrab;
 
         osg::Vec2d _mouse;
@@ -40,6 +41,7 @@ namespace mb {
         dGeomID pGeom;
         bool revert;
         osg::Vec3d _revertEye;
+
 
         //brought in from mouse event
         osgManipulator::PointerInfo pointerInfo;
@@ -70,6 +72,9 @@ namespace mb {
         //Get the geometry id
         dGeomID getGeomID();
 
+        //Get the geometry id
+        Body* getGrabbedBody();
+
         //Get position
         osg::Vec3 getPosition();
 
@@ -83,17 +88,8 @@ namespace mb {
         //Check the status on the revert flage
         void armRevert(double x, double y, double z);
 
-//        //Check the status on the revert flage
-//        bool checkRevert();
-
         //Process an armed revert
         void processRevert();
-
-//        //Revert last displacement
-//        void revertDisp();
-//
-//        //Trigger revert so that the camera reverts to the last position when exiting the collision function
-//        void toggleRevert();
 
         /** set the position of the matrix manipulator using a 4x4 Matrix.*/
         void setByMatrix(const osg::Matrixd& matrix);
@@ -106,6 +102,9 @@ namespace mb {
 
         /** get the position of the manipulator as a inverse matrix of the manipulator, typically used as a model view matrix.*/
         osg::Matrixd getInverseMatrix() const;
+
+        //update the record of the object position
+        void updateGrabbedPos(osg::Vec3 pos);
 
     protected:
         

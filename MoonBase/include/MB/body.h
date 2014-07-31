@@ -52,6 +52,10 @@ namespace mb {
         //Members
         void initialize();
 
+        //Special collisions if grabbed
+        bool revert;
+        osg::Vec3d revertPos;
+
     public:
 
         //Constructor party
@@ -65,6 +69,18 @@ namespace mb {
         //Align the current body with the provided one
         osg::Quat align(Body* ref);
 
+        //Check the status on the revert flage
+        void armRevert(double x, double y, double z);
+
+        //get revert status
+        bool getRevert();
+
+        //Process an armed revert
+        bool processRevert();
+
+        //set revert status
+        void setRevert(bool r);
+        
         //return a clone/clones
         Body* clone();
         Body* clone(int nClones);
@@ -87,6 +103,9 @@ namespace mb {
 
         //return the Geode pointer
         osg::Geode* getGeode();
+
+        //return the pGeom id
+        dGeomID getGeomID();
 
         //Set angular velocity
         void getAngularVelocity(double* av);
