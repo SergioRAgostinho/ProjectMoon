@@ -18,11 +18,11 @@ bool MouseEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActio
 
     osgViewer::View* view = dynamic_cast<osgViewer::View*>(&aa);
     if (view) {
-        switch (ea.getEventType()) {
+        //switch (ea.getEventType()) {
 
-            default:
-                break;
-        }
+        //    default:
+        //        break;
+        //}
     }
     return false;
 }

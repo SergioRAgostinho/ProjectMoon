@@ -9,6 +9,13 @@
 #ifndef MoonBase_body_h
 #define MoonBase_body_h
 
+#ifdef WIN32
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#endif
+
 #include <ode/ode.h>
 #include <osg/Shape>
 #include <osg/ShapeDrawable>

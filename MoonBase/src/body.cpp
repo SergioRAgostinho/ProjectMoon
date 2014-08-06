@@ -41,7 +41,7 @@ void Body::disablePBody() {
 //checks if pBody is enabled
 bool Body::isPBodyEnabled() {
     if(pBody)
-        return (bool) dBodyIsEnabled(pBody);
+        return (dBodyIsEnabled(pBody) != 0);
     else
         return false;
 }
@@ -386,7 +386,7 @@ bool Body::triOGS2ODE() {
 
 
     //Worst case - n(n-1) runs
-    for (int i = 0; i < nVerts; ++i) {
+    for (unsigned int i = 0; i < nVerts; ++i) {
         osg::Vec3 vert = (*array)[i];
         bool repeated = false;
 

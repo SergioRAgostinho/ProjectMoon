@@ -9,6 +9,13 @@
 #ifndef MoonBase_infiniteplane_hpp
 #define MoonBase_infiniteplane_hpp
 
+#ifdef WIN32
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#endif
+
 #include <ode/ode.h>
 
 #include <MB/body.h>

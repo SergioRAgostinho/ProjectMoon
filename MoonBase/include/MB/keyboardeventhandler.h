@@ -9,6 +9,13 @@
 #ifndef MoonBase_keyboardeventhandler_hpp
 #define MoonBase_keyboardeventhandler_hpp
 
+#ifdef WIN32
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#endif
+
 #include <osgGA/GUIEventHandler>
 #include <MB/body.h>
 #include <MB/application.h>

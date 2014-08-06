@@ -183,7 +183,7 @@ void Application::renderLoop() {
 void Application::populateScene() {
 
     loader = new mb::Loader("../res/models/MarsSurface.osgt");
-    loader2 = new mb::Loader("../res/models/moscatel.osgt");
+    loader2 = new mb::Loader("../res/models/muscatel.osgt");
 
     //Place the hexagon
     osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");

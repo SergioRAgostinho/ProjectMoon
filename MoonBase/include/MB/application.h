@@ -1,6 +1,14 @@
 #ifndef MoonBase_application_h
 #define MoonBase_application_h
 
+#ifdef WIN32
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#endif
+
+
 #pragma once
 #include <osgViewer/Viewer>
 #include <osgUtil/Optimizer>
@@ -8,9 +16,6 @@
 #include <osg/ShapeDrawable>
 #include <osgGA/TrackballManipulator>
 
-//#ifndef dDOUBLE
-//#define dDOUBLE
-//#endif
 #include <ode/ode.h>
 #include <MB/cube.h>
 #include <MB/infiniteplane.h>

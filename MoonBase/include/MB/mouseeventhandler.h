@@ -9,6 +9,13 @@
 #ifndef MoonBase_mouseeventhandler_h
 #define MoonBase_mouseeventhandler_h
 
+#ifdef WIN32
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#endif
+
 #include <osgGA/GUIEventHandler>
 #include <osgViewer/View>
 #include <osgManipulator/Dragger>

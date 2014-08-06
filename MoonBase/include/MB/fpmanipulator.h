@@ -9,6 +9,13 @@
 #ifndef MoonBase_fpmanipulator_h
 #define MoonBase_fpmanipulator_h
 
+#ifdef WIN32
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#endif
+
 #include <osgGA/StandardManipulator>
 #include <osgViewer/GraphicsWindow>
 #include <osgManipulator/Dragger>

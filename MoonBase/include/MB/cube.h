@@ -1,7 +1,13 @@
 #pragma once
-//#ifndef dDOUBLE
-//#define dDOUBLE
-//#endif
+
+
+#ifdef WIN32
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+#endif
+
 #include <ode/ode.h>
 #include <osg/ShapeDrawable>
 #include <osg/Geode>
