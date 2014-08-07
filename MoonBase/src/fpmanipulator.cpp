@@ -201,7 +201,19 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         }
         case osgGA::GUIEventAdapter::SCROLL :
         {
-            deltaTZ += 0.4 * ea.getScrollingDeltaY();
+			if (ea.getScrollingDeltaY())
+				deltaTZ += 0.4 * ea.getScrollingDeltaY();
+			else {
+				switch (ea.getScrollingMotion())
+				{
+				case osgGA::GUIEventAdapter::SCROLL_UP:
+					deltaTZ += 1.6;
+					break;
+				case osgGA::GUIEventAdapter::SCROLL_DOWN:
+					deltaTZ -= 1.6;
+					break;
+				}
+			}
             break;
         }
         case osgGA::GUIEventAdapter::PUSH: {
@@ -218,6 +230,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             if (grabbedBody && grabbed) {
                 grabbed = false;
                 align = false;
+				grabComplete = false;
 
                 double lv[3];
                 grabbedBody->getLinearVelocity(&lv[0]);
@@ -330,6 +343,11 @@ dGeomID FirstPersonManipulator::getGeomID() {
 //Get the geometry id
 Body* FirstPersonManipulator::getGrabbedBody() {
     return grabbedBody;
+}
+
+//Get grabbedComplete status
+bool FirstPersonManipulator::getGrabbedComplete() {
+	return grabComplete;
 }
 
 //Get position
@@ -476,22 +494,27 @@ void FirstPersonManipulator::updateGrabbed() {
     _eyeGrab.set(grabbedBody->getPosition());
 
     //Fix it once it's close
-    if(!grabbedBody->getRevert() && (!grabbedBody->isPBodyEnabled() ||(pos - _eyeGrab).length() < 2 )) {
+	bool isClose = (pos - _eyeGrab).length() < 2 ;
+	if (isClose) {
+		grabComplete = true;
+	}
+
+    if(!grabbedBody->getRevert() && (!grabbedBody->isPBodyEnabled() || isClose )) {
         grabbedBody->disablePBody();
         grabbedBody->setPosition(pos.x(), pos.y(), pos.z());
         grabbedBody->setLinearVelocity(0, 0, 0);
+
+		
     } else {
         //Gravity gun style
         float powerfactor = 4;
         float maxVel = 800;
 
-        if(grabbedBody->getRevert()) {
+        if(grabbedBody->getRevert() && grabComplete) {
             grabbedBody->enablePBody();
-//            static int counter = 0;
-//            std::cout << "Revert " << counter++ << std::endl;
             grabbedBody->setRevert(false);
-            powerfactor = 1;
-            maxVel = 1;
+			powerfactor = 0.01;
+			maxVel = 1;
         }
 
         osg::Vec3 v = pos - _eyeGrab;

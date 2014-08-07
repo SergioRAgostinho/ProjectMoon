@@ -59,6 +59,7 @@ namespace mb {
         Body* grabbedBody = nullptr;
         Body* alignRef = nullptr;
         bool align = false;
+		bool grabComplete = false;
         bool *selected, *active;
         int *inactiveCounter;
 
@@ -81,6 +82,9 @@ namespace mb {
 
         //Get the geometry id
         Body* getGrabbedBody();
+
+		//Get grabbedComplete status
+		bool getGrabbedComplete();
 
         //Get position
         osg::Vec3 getPosition();

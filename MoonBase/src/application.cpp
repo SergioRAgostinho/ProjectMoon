@@ -236,7 +236,7 @@ void Application::renderLoop() {
         //Revert the camera movement if needed
         man->processRevert();
         mb::Body* grabbedBody = man->getGrabbedBody();
-        if (grabbedBody)
+        if (grabbedBody && man->getGrabbedComplete())
             grabbedBody->processRevert();
 
 		//Update our objects
