@@ -100,6 +100,75 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 
                 return;
             }
+
+            //FIXME: Remove when trying collision between static, grabbed object and camera
+            return;
+        }
+
+        //////////////////////////////
+        //// Cameras grabbed object
+        ////////////////////////////
+        mb::Body* grabbedBody = cam->getGrabbedBody();
+
+        //if body exists
+        if( grabbedBody ) {
+
+            dGeomID grabbedGeom = grabbedBody->getGeomID();
+            if(grabbedGeom == o1 || grabbedGeom == o2) {
+
+                //find which one is the grabbed object
+                dGeomID otherGeom;
+                dBodyID otherBody;
+                if(grabbedGeom == o1) {
+                    otherGeom = o2;
+                    otherBody = b2;
+                } else {
+                    otherGeom = o1;
+                    otherBody = b1;
+                }
+
+                //check if the other object is static
+                if(!otherBody) {
+
+                    //Find the normal more burried into the object
+#if 1
+                    double depth = 0;
+                    int iMaxDepth = -1;
+                    for (i = 0; i<n; ++i) {
+                        double testDepth = (double) contact[i].geom.depth;
+                        if (testDepth > depth) {
+                            depth = testDepth;
+                            iMaxDepth = i;
+                        }
+                    }
+
+                    int sign;
+                    (grabbedGeom == contact[iMaxDepth].geom.g2)? sign = -1 : sign = 1;
+                    grabbedBody->armRevert((double) sign * depth * contact[iMaxDepth].geom.normal[0],
+                                           (double) sign * depth * contact[iMaxDepth].geom.normal[1],
+                                           (double) sign * depth * contact[iMaxDepth].geom.normal[2]);
+#else
+                    double depth = 0;
+                    int iMaxDepth = 0;
+                    dVector3 normal = {0,0,0,0};
+                    for (i = 0; i<n; ++i) {
+                        if (contact[i].geom.depth > 0) {
+                            depth = (double) contact[i].geom.depth;
+                            iMaxDepth++;
+                            normal[0] += depth*contact[i].geom.normal[0];
+                            normal[1] += depth*contact[i].geom.normal[1];
+                            normal[2] += depth*contact[i].geom.normal[2];
+                        }
+                    }
+
+                    int sign;
+                    (grabbedGeom == contact[iMaxDepth].geom.g2)? sign = -1 : sign = 1;
+                    grabbedBody->armRevert((double) sign * normal[0] /iMaxDepth,
+                                           (double) sign * normal[1] /iMaxDepth,
+                                           (double) sign * normal[2] /iMaxDepth);
+#endif
+                }
+            }
         }
 
         /////////////////////////
@@ -166,6 +235,9 @@ void Application::renderLoop() {
 
         //Revert the camera movement if needed
         man->processRevert();
+        mb::Body* grabbedBody = man->getGrabbedBody();
+        if (grabbedBody)
+            grabbedBody->processRevert();
 
 		//Update our objects
         moscatel->update();
