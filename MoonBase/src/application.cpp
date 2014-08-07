@@ -217,6 +217,16 @@ void Application::populateScene() {
     root->addChild(moscatelTBRot->getPAT());
     root->addChild(hud->init());
     viewer.setSceneData(root.get());
+
+	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
+	//Camera manipulator
+	man = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
+	man->initCollision(pSpace);
+	camManip = man;
+
+	//Subscribe object
+	viewer.setCameraManipulator(camManip);
+	viewer.addEventHandler(new mb::KeyboardEventHandler(this));
 }
 
 void Application::setGraphicsContext() {
@@ -241,15 +251,6 @@ void Application::setGraphicsContext() {
 
 	// add this slave camera to the viewer, with a shift left of the projection matrix
     viewer.addSlave(camera.get());
-
-    //Camera manipulator
-    man = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
-    man->initCollision(pSpace);
-    camManip = man;
-
-    //Subscribe object
-    viewer.setCameraManipulator(camManip);
-    viewer.addEventHandler(new mb::KeyboardEventHandler(this));
 
     //HUD
     hud = new mb::Hud();

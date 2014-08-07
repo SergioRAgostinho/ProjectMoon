@@ -22,7 +22,11 @@ FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Bod
     deltaTZ = 0;
     deltaRX = 0;
     deltaRY = 0;
+#ifdef WIN32 
+	offsetScreen = 150.0;
+#else
     offsetScreen = 50.0;
+#endif
 
     screenCenter.set(0, 0);
 
@@ -39,14 +43,17 @@ FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Bod
 FirstPersonManipulator::~FirstPersonManipulator() {
     if (selected) {
             delete [] selected;
+			selected = nullptr;
     }
 
     if (active) {
             delete [] active;
+			active = nullptr;
     }
 
     if (inactiveCounter) {
             delete [] inactiveCounter;
+			inactiveCounter = nullptr;
     }
 
 }
@@ -183,7 +190,11 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
 
                 newReqXPosition = newMouseXPosition;
                 newReqYPosition = newMouseYPosition;
+#ifdef WIN32 
+				us.requestWarpPointer(newMouseXPosition, newMouseYPosition);
+#else
                 us.requestWarpPointer(newMouseXPosition, ea.getWindowHeight() - newMouseYPosition);
+#endif
             }
 
             break;
@@ -428,7 +439,7 @@ void FirstPersonManipulator::checkSelectables(osgViewer::View* view,const osgGA:
                 if (osg::Geode* geo = dynamic_cast<osg::Geode*>(*npIter)) {
 
 
-                    for( int i = 0 ; i < selectableBodies->size(); ++i) {
+                    for(unsigned int i = 0 ; i < selectableBodies->size(); ++i) {
                         if((*selectableBodies)[i]->getGeode() == geo) {
 
 //                            if(((*selectableBodies)[i]->getPosition() - _eye).length() <= 200) {
@@ -459,7 +470,7 @@ void FirstPersonManipulator::checkSelectables(osgViewer::View* view,const osgGA:
 
     }
 
-    for(int i = 0; i < selectableBodies->size(); ++i) {
+    for(unsigned int i = 0; i < selectableBodies->size(); ++i) {
         if(!selected[i] && active[i]) {
             if(++inactiveCounter[i] > 0) {
                 (*selectableBodies)[i]->removeBB();
