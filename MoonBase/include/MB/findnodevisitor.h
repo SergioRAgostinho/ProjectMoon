@@ -78,6 +78,9 @@ namespace mb {
         //Compare the nodes name with the search name and if it is valid
         if(searchNode.getName() == searchForName)
             foundNodeList.push_back(&searchNode);
+		else if (searchForName == "")
+			foundNodeList.push_back(&searchNode);
+
 
 //        std::cout << searchNode.getName() << std::endl;
 

@@ -26,6 +26,9 @@ namespace mb {
 
         template<class osgNodeType>
         osgNodeType* getNode(const std::string& name);
+
+		template<class osgNodeType>
+		void getNodeList(std::vector<osgNodeType*> out);
         
         bool setRoot(const std::string& name);
     };
@@ -36,6 +39,13 @@ namespace mb {
         gNode->accept(nodeVisitor);
         return nodeVisitor.getFirst();
     }
+
+	template<class osgNodeType>
+	inline void Loader::getNodeList(std::vector<osgNodeType*> out) {
+		FindNodeVisitor<osgNodeType> nodeVisitor = FindNodeVisitor<osgNodeType>();
+		gNode->accept(nodeVisitor);
+		out.push_back(nodeVisitor.getNodeList());
+	}
 
 }
 #endif

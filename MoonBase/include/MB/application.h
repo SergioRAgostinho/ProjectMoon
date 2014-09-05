@@ -53,6 +53,9 @@ public:
     mb::Body *marsSurface, *moscatel, *moscatelTBRot;
     std::vector<mb::Body*> selectableObjects;
 
+	std::vector<mb::Loader*> assembliesLoad;
+	std::vector<mb::Body*> bodyList;
+
     //HUD
     mb::Hud* hud;
 

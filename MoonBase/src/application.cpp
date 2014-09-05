@@ -21,6 +21,22 @@ Application::~Application()
     delete marsSurface;
     delete moscatel;
     delete hud;
+	
+	//dump loader list
+	for (auto loaderPtr : assembliesLoad) {
+		if (loaderPtr != nullptr) {
+			delete loaderPtr;
+			loaderPtr = nullptr;
+		}
+	}
+
+	//dump body  list
+	for (auto bodyPtr : bodyList) {
+		if (bodyPtr != nullptr) {
+			delete bodyPtr;
+			bodyPtr = nullptr;
+		}
+	}
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -256,14 +272,16 @@ void Application::populateScene() {
 
     loader = new mb::Loader("../res/models/MarsSurface.osgt");
     loader2 = new mb::Loader("../res/models/muscatel.osgt");
+	assembliesLoad.push_back(new mb::Loader("../res/models/multi_part_align_0.osgt"));
+	assembliesLoad.push_back(new mb::Loader("../res/models/multi_part_align_1.osgt"));
+	assembliesLoad.push_back(new mb::Loader("../res/models/multi_part_align_2.osgt"));
 
-    //Place the hexagon
+    //Place the surface
     osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
     marsSurface = new mb::Body(surface.get());
     marsSurface->initCollision(pSpace);
 
-
-
+	//Extract from loader number 2
     moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
     moscatel->setPosition(60, 0, 60);
     osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
@@ -282,12 +300,28 @@ void Application::populateScene() {
     moscatelTBRot->togglePermBB();
     selectableObjects.push_back(moscatelTBRot);
 
+	//Place the first icosahedron
+	bodyList.push_back(new mb::Body(assembliesLoad[0]->getNode<osg::Geode>("GeodeIcosphere")));
+	bodyList[0]->setPosition(40, 0, 60);
+
+	//Extract the transformation matrix of the anchor point
+	//osg::ref_ptr<osg::MatrixTransform> matT = assembliesLoad[0]->getNode<osg::MatrixTransform>("join-0-00");
+	
+	std::vector<osg::MatrixTransform*> test;
+	assembliesLoad[1]->getNodeList<osg::MatrixTransform>(test);
+
+	
+
     //Add to root
     root = new osg::Group;
     root->addChild(marsSurface->getPAT());
     root->addChild(moscatel->getPAT());
     root->addChild(moscatelTBRot->getPAT());
-    root->addChild(hud->init());
+
+	//root->addChild(bodyList[0]->getPAT());
+	root->addChild(assembliesLoad[0]->getNode<osg::Group>("Root"));
+    
+	root->addChild(hud->init());
     viewer.setSceneData(root.get());
 
 	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
