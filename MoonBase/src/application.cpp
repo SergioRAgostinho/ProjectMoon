@@ -17,26 +17,7 @@ Application::~Application()
 {
 	//FIXME
     delete loader;
-    delete loader2;
-    delete marsSurface;
-    delete moscatel;
     delete hud;
-	
-	//dump loader list
-	for (auto loaderPtr : assembliesLoad) {
-		if (loaderPtr != nullptr) {
-			delete loaderPtr;
-			loaderPtr = nullptr;
-		}
-	}
-
-	//dump body  list
-	for (auto bodyPtr : bodyList) {
-		if (bodyPtr != nullptr) {
-			delete bodyPtr;
-			bodyPtr = nullptr;
-		}
-	}
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -256,8 +237,7 @@ void Application::renderLoop() {
             grabbedBody->processRevert();
 
 		//Update our objects
-        moscatel->update();
-        moscatelTBRot->update();
+        
 
 		//Renders frame decomposing this into all the required events to prevent camera from jittering on collision
         //		viewer.frame();
@@ -271,56 +251,15 @@ void Application::renderLoop() {
 void Application::populateScene() {
 
     loader = new mb::Loader("../res/models/MarsSurface.osgt");
-    loader2 = new mb::Loader("../res/models/muscatel.osgt");
-	assembliesLoad.push_back(new mb::Loader("../res/models/multi_part_align_0.osgt"));
-	assembliesLoad.push_back(new mb::Loader("../res/models/multi_part_align_1.osgt"));
-	assembliesLoad.push_back(new mb::Loader("../res/models/multi_part_align_2.osgt"));
+    
 
     //Place the surface
-    osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
-    marsSurface = new mb::Body(surface.get());
-    marsSurface->initCollision(pSpace);
-
-	//Extract from loader number 2
-    moscatel = new mb::Body(loader2->getNode<osg::Geode>("pCylinder1-GEODE"));
-    moscatel->setPosition(60, 0, 60);
-    osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-    axis.normalize();
-    osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
-    osg::Quat q = rot.getRotate();
-    moscatel->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
-    moscatel->activateBB();
-    moscatel->togglePermBB();
-    selectableObjects.push_back(moscatel);
-
-    moscatelTBRot = moscatel->clone();
-    moscatelTBRot->initPhysics(pWorld, pSpace, 2);
-    moscatelTBRot->setPosition(50, 0, 60);
-    moscatelTBRot->activateBB();
-    moscatelTBRot->togglePermBB();
-    selectableObjects.push_back(moscatelTBRot);
-
-	//Place the first icosahedron
-	bodyList.push_back(new mb::Body(assembliesLoad[0]->getNode<osg::Geode>("GeodeIcosphere")));
-	bodyList[0]->setPosition(40, 0, 60);
-
-	//Extract the transformation matrix of the anchor point
-	//osg::ref_ptr<osg::MatrixTransform> matT = assembliesLoad[0]->getNode<osg::MatrixTransform>("join-0-00");
-	
-	std::vector<osg::MatrixTransform*> test;
-	assembliesLoad[1]->getNodeList<osg::MatrixTransform>(test);
-
-	
+    //osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
+    //marsSurface = new mb::Body(surface.get());
+    //marsSurface->initCollision(pSpace);
 
     //Add to root
     root = new osg::Group;
-    root->addChild(marsSurface->getPAT());
-    root->addChild(moscatel->getPAT());
-    root->addChild(moscatelTBRot->getPAT());
-
-	//root->addChild(bodyList[0]->getPAT());
-	root->addChild(assembliesLoad[0]->getNode<osg::Group>("Root"));
-    
 	root->addChild(hud->init());
     viewer.setSceneData(root.get());
 

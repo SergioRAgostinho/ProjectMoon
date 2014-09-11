@@ -49,12 +49,7 @@ public:
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-    mb::Loader* loader, *loader2;
-    mb::Body *marsSurface, *moscatel, *moscatelTBRot;
-    std::vector<mb::Body*> selectableObjects;
-
-	std::vector<mb::Loader*> assembliesLoad;
-	std::vector<mb::Body*> bodyList;
+	mb::Loader* loader;
 
     //HUD
     mb::Hud* hud;
