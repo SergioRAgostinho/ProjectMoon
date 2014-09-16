@@ -67,8 +67,11 @@ namespace mb {
         //invoked to reposition the camera and to updated any grabbed object maintained with it
         void checkSelectables(osgViewer::View* view, const osgGA::GUIEventAdapter *ea);
         void updateGrabbed();
+
         
     public:
+
+		FirstPersonManipulator(osg::Camera* cam);
         FirstPersonManipulator(osg::Camera* cam, std::vector<Body*> *b);
         ~FirstPersonManipulator();
 

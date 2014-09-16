@@ -15,9 +15,33 @@
 
 using namespace mb;
 
+FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam) : camera(cam) {
+
+	translationFactor = 0.04;
+	_mouvement.set(0, 0, 0);
+	deltaTZ = 0;
+	deltaRX = 0;
+	deltaRY = 0;
+#ifdef WIN32 
+	offsetScreen = 150.0;
+#else
+	offsetScreen = 50.0;
+#endif
+
+	screenCenter.set(0, 0);
+
+
+	selectableBodies = nullptr;
+	selected = nullptr;
+	active = nullptr;
+	inactiveCounter = nullptr;
+
+	revert = false;
+}
+
 FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Body*> *b) : camera(cam) ,selectableBodies(b) {
 
-    translationFactor = 2;
+    translationFactor = 0.04;
     _mouvement.set(0,0,0);
     deltaTZ = 0;
     deltaRX = 0;
@@ -41,6 +65,10 @@ FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Bod
 }
 
 FirstPersonManipulator::~FirstPersonManipulator() {
+
+	//*selectableBodies is a variable pre-allocade outside the scope of this class and therefore 
+	// we should not release its memory here
+
     if (selected) {
             delete [] selected;
 			selected = nullptr;
@@ -60,9 +88,6 @@ FirstPersonManipulator::~FirstPersonManipulator() {
 
 
 bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &us){
-
-//    static int counter = 0;
-//    std::cout << " MANIP: " << counter++ << std::endl;
 
     static bool grabbed = false;
     static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
@@ -107,8 +132,10 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
                     _mouvement.set(translationFactor, _mouvement.y(),_mouvement.z());
                     break;
             }
+			//std::cout << "X_eye: " << _eye.x() 
+			//	<< "Y_eye: " << _eye.y() 
+			//	<< "Z_eye: " << _eye.z() << std::endl;
             break;
-
         }
         case osgGA::GUIEventAdapter::KEYUP :
         {
@@ -202,15 +229,15 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         case osgGA::GUIEventAdapter::SCROLL :
         {
 			if (ea.getScrollingDeltaY())
-				deltaTZ += 0.4 * ea.getScrollingDeltaY();
+				deltaTZ += 0.4 * translationFactor * ea.getScrollingDeltaY();
 			else {
 				switch (ea.getScrollingMotion())
 				{
 				case osgGA::GUIEventAdapter::SCROLL_UP:
-					deltaTZ += 1.6;
+					deltaTZ += 1.6 * translationFactor;
 					break;
 				case osgGA::GUIEventAdapter::SCROLL_DOWN:
-					deltaTZ -= 1.6;
+					deltaTZ -= 1.6 * translationFactor;
 					break;
 				}
 			}
@@ -251,7 +278,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
 
 
     osgViewer::View* view = dynamic_cast<osgViewer::View*>(&us);
-    if (view) {
+    if (view && selectableBodies && selectableBodies->size() > 0) {
         checkSelectables(view, &ea);
     }
 
@@ -369,7 +396,7 @@ void FirstPersonManipulator::initCollision(dSpaceID s, float colRadius) {
     pGeom = dCreateSphere(pSpace, (dReal) colRadius);
 }
 
-//Check the status on the revert flage
+//Check the status on the revert flag
 void FirstPersonManipulator::armRevert(double x, double y, double z) {
     _revertEye.set(x,y,z);
     revert = true;

@@ -49,6 +49,9 @@ public:
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
+	mb::Body *marsSurface = nullptr;
+
+	//Loaders
 	mb::Loader* loader;
 
     //HUD

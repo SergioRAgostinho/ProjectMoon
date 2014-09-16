@@ -9,6 +9,7 @@
 #include <osgDB/ReadFile>
 #include <MB/loader.h>
 #include <MB/findnodevisitor.h>
+#include <MB/printnodevisitor.h>
 
 using namespace mb;
 
@@ -19,6 +20,10 @@ Loader::Loader(const std::string& path) {
     options->setDatabasePath("../res/textures/");
     gNode = osgDB::readNodeFile(path,options);
 
+}
+
+osg::Node* Loader::getNode() {
+	return Object::getNode();
 }
 
 osg::Node* Loader::getNode(const std::string &name) {
@@ -40,4 +45,9 @@ bool Loader::setRoot(const std::string& name) {
     }
 
     return false;
+}
+
+void Loader::printGraph() {
+	PrintNodeVisitor pnv;
+	gNode->accept(pnv);
 }

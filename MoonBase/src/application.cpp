@@ -18,6 +18,10 @@ Application::~Application()
 	//FIXME
     delete loader;
     delete hud;
+	if (marsSurface) {
+		delete marsSurface;
+		marsSurface = nullptr;
+	}
 
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
@@ -212,7 +216,9 @@ void Application::renderLoop() {
 
 
     //needs to be invoked here!
-    camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 30) );
+    //camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 30) );
+	camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0) * osg::Matrix::rotate(-M_PI_2 * 0.28f, 1, 0, 0) 
+		* osg::Matrix::rotate(M_PI * 1.14f, 0, 0, 1) * osg::Matrix::translate(0, -17.7, -0.4));
 
 
     viewer.init();
@@ -250,23 +256,31 @@ void Application::renderLoop() {
 
 void Application::populateScene() {
 
-    loader = new mb::Loader("../res/models/MarsSurface.osgt");
-    
+	//Create root node
+	root = new osg::Group;
+
+	//Add HUD
+	root->addChild(hud->init());
 
     //Place the surface
-    //osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
-    //marsSurface = new mb::Body(surface.get());
-    //marsSurface->initCollision(pSpace);
+	//loader = new mb::Loader("../res/models/MarsSurface.osgt");
+ //   osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
+ //   marsSurface = new mb::Body(surface.get());
+ //   marsSurface->initCollision(pSpace);
+	//root->addChild(marsSurface->getPAT());
 
-    //Add to root
-    root = new osg::Group;
-	root->addChild(hud->init());
+	//Load the ISS
+	loader = new mb::Loader("../res/models/iss_int5.ive");
+	loader->printGraph();
+	root->addChild(loader->getNode());
+
+    //Add full tree to scene
     viewer.setSceneData(root.get());
 
 	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
 	//Camera manipulator
-	man = new mb::FirstPersonManipulator(camera.get(), &selectableObjects);
-	man->initCollision(pSpace);
+	man = new mb::FirstPersonManipulator(camera.get());
+	man->initCollision(pSpace, 0.1f);
 	camManip = man;
 
 	//Subscribe object
@@ -284,6 +298,7 @@ void Application::setGraphicsContext() {
 	traits->windowDecoration = true;
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
+	traits->useCursor = false;
 
 	gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 

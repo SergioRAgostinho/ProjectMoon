@@ -22,15 +22,20 @@ namespace mb {
 
         Loader(const std::string& path);
 
+		//GetNode returns a pointer to the top node or to one specified by the type and name provided
+		osg::Node* getNode();
         osg::Node* getNode(const std::string& name);
-
         template<class osgNodeType>
         osgNodeType* getNode(const std::string& name);
 
 		template<class osgNodeType>
 		void getNodeList(std::vector<osgNodeType*> out);
         
+		//Change the current root node to the node with the provided name
         bool setRoot(const std::string& name);
+
+		//Prints a list of node names and types properly indented
+		void printGraph();
     };
 
     template<class osgNodeType>

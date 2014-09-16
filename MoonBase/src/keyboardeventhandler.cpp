@@ -16,7 +16,7 @@ KeyboardEventHandler::KeyboardEventHandler(Application* a) : app(a) {}
 
 bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa) {
 
-    Body* body = app->moscatelTBRot;
+	Body* body = nullptr;
 
     //    static int counter = 0;
     //    std::cout << " KEY: " << counter++ << std::endl;
@@ -27,29 +27,34 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
             switch (ea.getKey()) {
                 case 'f':
                 case 'F':
-                    body->setPosition(0, 0, 60);
-                    body->setLinearVelocity(uniRand(-10, 10),uniRand(-10, 10),uniRand(-10, 10));
-                    body->setAngularVelocity(uniRand(-1, 1),uniRand(-1, 1),uniRand(-1, 1));
+					if (body) {
+						body->setPosition(0, 0, 60);
+						body->setLinearVelocity(uniRand(-10, 10), uniRand(-10, 10), uniRand(-10, 10));
+						body->setAngularVelocity(uniRand(-1, 1), uniRand(-1, 1), uniRand(-1, 1));
+					}
                     break;
                 case 'r':
                 case 'R':
                     //align with other object
-                    body->align(app->moscatel);
                     break;
                 case 't':
                 case 'T': {
-                    osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1),mb::uniRand(-1, 1),mb::uniRand(-1, 1));
-                    axis.normalize();
-                    osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
-                    osg::Quat q = rot.getRotate();
-                    body->setOrientationQuat(q.x(),q.y(),q.z(),q.w());
+					if (body) {
+						osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1), mb::uniRand(-1, 1), mb::uniRand(-1, 1));
+						axis.normalize();
+						osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
+						osg::Quat q = rot.getRotate();
+						body->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+					}
                     break;
                 }
                 case 'z':
                 case 'Z': {
-                    static bool enable = true;
-                    enable? body->disablePBody() : body->enablePBody();
-                    enable = !enable;
+					if (body) {
+						static bool enable = true;
+						enable ? body->disablePBody() : body->enablePBody();
+						enable = !enable;
+					}
                     break;
                 }
                 default:
