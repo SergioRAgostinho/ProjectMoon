@@ -235,6 +235,7 @@ void Application::renderLoop() {
 	//camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0) * osg::Matrix::rotate(-M_PI_2 * 0.28f, 1, 0, 0) 
 	//	* osg::Matrix::rotate(M_PI * 1.14f, 0, 0, 1) * osg::Matrix::translate(0, -17.7, -0.4));
 	//camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
+	
 	man->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
 
 
@@ -289,8 +290,14 @@ void Application::populateScene() {
 
 	//Load the ISS
 	loader = new mb::Loader("../res/models/iss_int5.ive");
-	loader->setRoot("MSG");
+	//loader->printGraph();
+	loader->setRoot<osg::MatrixTransform>();
+	loader->getPAT()->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
+	loader->getPAT()->setPosition(osg::Vec3(0, -17.7, 0.4));
+
+	//loader->setRoot("MSG");
 	root->addChild(loader->getPAT());
+	//root->addChild(loader->getNode());
 
 	//osg::ref_ptr<osg::Geode> part = loader->getNode<osg::Geode>("p98"); //<- quads
 	//osg::ref_ptr<osg::Geode> part2 = loader->getNode<osg::Geode>("Node2_f3922"); //<- triangles

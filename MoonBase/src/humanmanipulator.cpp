@@ -32,7 +32,7 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 	frame = nullptr;
 
 	//Start Kinect sensor and object
-	hr = kinect.Initialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON);
+	HRESULT hr = kinect.Initialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON);
 	if (FAILED(hr))
 		std::cerr << "Sensor was not properly initialized" << std::endl;
 
@@ -48,6 +48,9 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 
 	//Sets up the window, camera, quad and texture to properly visualize the camera feed
 	setUpVideoWindow();
+
+	//Set movement to nulls
+	_movement.set(0, 0, 0);
 }
 
 
@@ -116,7 +119,7 @@ void HumanManipulator::setUpVideoWindow() {
 	viewer->addSlave(camera.get(), false);
 
 	//Create the skeleton figure
-	createSkeleton();
+	createSkeletonDraw();
 }
 
 //Process Skeleton, ensure proper tracking, and rejection of additional elements
@@ -132,10 +135,19 @@ void HumanManipulator::processSkeleton() {
 			if (!s_track_id) {
 				s_track_id = s_frame.SkeletonData[i].dwTrackingID;
 				s_idx = i;
+
+				//Reset mask so it is visible again
+				s_geode->setNodeMask(0xff);
 			}
 
-			if (s_track_id == s_frame.SkeletonData[i].dwTrackingID)
+			//The original skeleton is being tracked
+			if (s_track_id == s_frame.SkeletonData[i].dwTrackingID) {
 				activeSkeletonPresent = true;
+
+				Vector4 centre = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER];
+				_movement.set(centre.x, centre.y, centre.z);
+
+			}
 		}
 	}
 
@@ -143,22 +155,26 @@ void HumanManipulator::processSkeleton() {
 	if (!activeSkeletonPresent) {
 		s_track_id = 0;
 		s_idx = -1;
+
+		//Apply mask so it doesn't get rendered
+		s_geode->setNodeMask(0x00);
 	}
 }
 
-void HumanManipulator::createSkeleton() {
+void HumanManipulator::createSkeletonDraw() {
 
 	s_geode = new osg::Geode;
 	s_geode->setDataVariance(osg::Object::DYNAMIC);
 	s_geode->getOrCreateStateSet()->setAttributeAndModes(new osg::LineWidth(4.0f), osg::StateAttribute::ON);
+	s_geode->setNodeMask(0x00);
 
 	osg::ref_ptr<osg::Vec4Array> color = new osg::Vec4Array;
 	color->push_back(osg::Vec4(1.0, 0.0, 0.0, 1.0));
 
 	for (short int i = 0; i < JOINTS; i++)
 	{
-		const osg::Vec2 pt = osg::Vec2(100, 100);
-		const osg::Vec2 pt2 = osg::Vec2(300, 300);
+		const osg::Vec2 pt = osg::Vec2(1, 1);
+		const osg::Vec2 pt2 = osg::Vec2(10, 10);
 
 		osg::ref_ptr<osg::Vec2Array> points = new osg::Vec2Array;
 		vertex_ptr[i] = points;
@@ -180,23 +196,23 @@ void HumanManipulator::createSkeleton() {
 }
 
 //Handles the drawing of the skeleton
-void HumanManipulator::updateSkeleton() {
+void HumanManipulator::updateSkeletonDraw() {
 	
 	//Draw Skeletal joints
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_HEAD], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER], 0);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_HEAD], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER], 0);
 
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_LEFT], 1);
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_LEFT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_LEFT], 2);
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_LEFT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_LEFT], 3);
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_LEFT], 4);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_LEFT], 1);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_LEFT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_LEFT], 2);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_LEFT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_LEFT], 3);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_LEFT], 4);
 
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_RIGHT], 5);
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_RIGHT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_RIGHT], 6);
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_RIGHT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_RIGHT], 7);
-	updateBone(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_RIGHT], 8);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_RIGHT], 5);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_RIGHT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_RIGHT], 6);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_RIGHT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_RIGHT], 7);
+	updateBoneDraw(s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT], s_frame.SkeletonData[s_idx].SkeletonPositions[NUI_SKELETON_POSITION_WRIST_RIGHT], 8);
 }
 
-void HumanManipulator::updateBone(Vector4 skeletonPoint_1, Vector4 skeletonPoint_2, short unsigned int idx) {
+void HumanManipulator::updateBoneDraw(Vector4 skeletonPoint_1, Vector4 skeletonPoint_2, short unsigned int idx) {
 
 	long x, y;
 	unsigned short depth;
@@ -268,27 +284,47 @@ osg::Matrixd HumanManipulator::getInverseMatrix() const{
 // or input devices 
 bool HumanManipulator::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &us){
 
+	//Used ONLY to control when to move the camera around
+	//static bool s_updated = false;
+
 	//Try to get the skeleton
-	hr = kinect.GetSkeletonFrame(&s_frame);
-	if (SUCCEEDED(hr))
+	const HRESULT s_hr = kinect.GetSkeletonFrame(&s_frame);
+	if (SUCCEEDED(s_hr)) {
 		processSkeleton();
+		//s_updated = true;
+	}
 
 	//Only copy frames if there's an actual window
 	if (_mode == DEBUG_WINDOW) {
 		
 		//Try to get new depth frame it there's one available
-		hr = kinect.GetDepthFrame(frame);
-		if (FAILED(hr) && hr != E_NUI_FRAME_NO_DATA)
+		const HRESULT d_hr = kinect.GetDepthFrame(frame);
+		if (FAILED(d_hr) && d_hr != E_NUI_FRAME_NO_DATA)
 			std::cerr << "Problems extracking the depth frame" << std::endl;
 
 		//Only update on new image
-		if (SUCCEEDED(hr)) 
+		if (SUCCEEDED(d_hr)) 
 			image->dirty();
 
 
-		//Draw the skeleton joints on top of the image
-		if (s_track_id)
-			updateSkeleton();
+		//Draw the skeleton joints on top of the image in case it is updated
+		if (SUCCEEDED(s_hr) && s_track_id)
+			updateSkeletonDraw();
+	}
+
+	
+	//Traditional manipulator events
+	switch (ea.getEventType())
+	{
+	case osgGA::GUIEventAdapter::FRAME:
+
+		//if (s_updated) {
+			_eye = _rotation * _movement;
+			//s_updated = false;
+		//}
+		break;
+	default:
+		break;
 	}
 
 	return false;

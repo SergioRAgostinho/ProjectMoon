@@ -36,17 +36,7 @@ osg::Node* Loader::getNode(const std::string &name) {
 
 
 bool Loader::setRoot(const std::string& name) {
-
-    FindNodeVisitor<osg::Node> nodeVisitor = FindNodeVisitor<osg::Node>(name);
-    gNode->accept(nodeVisitor);
-    osg::Node* node = nodeVisitor.getFirst();
-    if (node) {
-        gPAT->removeChild(gPAT->getChild(0));
-        gPAT->addChild(node);
-        return true;
-    }
-
-    return false;
+	return setRoot<osg::Node>(name);
 }
 
 void Loader::printGraph() {

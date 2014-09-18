@@ -34,9 +34,11 @@ namespace mb {
 		osg::Vec3d _eye;
 		osg::Quat _rotation;
 
+		//Movement related
+		osg::Vec3d _movement;
+
 		//Kinect sensor object
 		Kinect::Sensor kinect;
-		HRESULT hr;
 
 		//Skeleton frame, tracking id, array index and the necessary pointers to update the 
 		//skeletal rendering efficiently
@@ -72,9 +74,9 @@ namespace mb {
 		void processSkeleton();
 
 		//Handles the drawing of the skeleton
-		void createSkeleton();
-		void updateSkeleton();
-		void updateBone(Vector4 skeletonPoint_1, Vector4 skeletonPoint_2, short unsigned int idx);
+		void createSkeletonDraw();
+		void updateSkeletonDraw();
+		void updateBoneDraw(Vector4 skeletonPoint_1, Vector4 skeletonPoint_2, short unsigned int idx);
 		
 	public:
 

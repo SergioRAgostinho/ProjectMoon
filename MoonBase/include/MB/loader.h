@@ -33,7 +33,9 @@ namespace mb {
 		void getNodeList(std::vector<osgNodeType*> out);
         
 		//Change the current root node to the node with the provided name
-        bool setRoot(const std::string& name);
+		bool setRoot(const std::string& name = "");
+		template<class osgNodeType>
+        bool setRoot(const std::string& name = "");
 
 		//Prints a list of node names and types properly indented. 
 		//The template version provides filtering capabilities to only otput the specific type
@@ -41,6 +43,11 @@ namespace mb {
 		template<class osgNodeType>
 		void printGraph();
     };
+
+
+	////////////////////////////////////////
+	////   INLINE DEFINITIONS BECAUSE OF TEMPLATES
+	///////////////////////////////////////////
 
     template<class osgNodeType>
     inline osgNodeType* Loader::getNode(const std::string &name) {
@@ -54,6 +61,21 @@ namespace mb {
 		FindNodeVisitor<osgNodeType> nodeVisitor = FindNodeVisitor<osgNodeType>();
 		gNode->accept(nodeVisitor);
 		out.push_back(nodeVisitor.getNodeList());
+	}
+
+	template<class osgNodeType>
+	bool Loader::setRoot(const std::string& name) {
+
+		FindNodeVisitor<osgNodeType> nodeVisitor = FindNodeVisitor<osgNodeType>(name);
+		gNode->accept(nodeVisitor);
+		osgNodeType* node = nodeVisitor.getFirst();
+		if (node) {
+			gPAT->removeChild(gPAT->getChild(0));
+			gPAT->addChild(node);
+			return true;
+		}
+
+		return false;
 	}
 
 	template<class osgNodeType>
