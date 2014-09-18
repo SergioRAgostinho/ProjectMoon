@@ -13,6 +13,8 @@
 
 using namespace mb;
 
+//Some templates here. Check headers for inline definitions of some methods
+
 Loader::Loader(const std::string& path) {
 
     //Load object
@@ -48,6 +50,5 @@ bool Loader::setRoot(const std::string& name) {
 }
 
 void Loader::printGraph() {
-	PrintNodeVisitor pnv;
-	gNode->accept(pnv);
+	printGraph<osg::Node>();
 }

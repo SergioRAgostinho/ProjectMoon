@@ -10,3 +10,4 @@
 
 using namespace mb;
 
+//Mostly a template. Check the header for the inline definitions of the methods

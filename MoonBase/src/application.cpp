@@ -1,5 +1,6 @@
 
 #include <osgGA/FirstPersonManipulator>
+#include <osgViewer/View>
 #include <MB/application.h>
 #include <MB/keyboardeventhandler.h>
 #include <MB/utils.hpp>
@@ -10,19 +11,33 @@
 Application::Application()
 {
 	dInitODE2(0);
+
+	//model loader component
+	loader = nullptr;
+
+	//heads up display component
+	hud = nullptr;
+
+	//scene models
+	marsSurface = nullptr;
+
+	//Manipulators
+	man = nullptr;
+	human = nullptr;
 }
 
 
 Application::~Application()
 {
 	//FIXME
-    delete loader;
-    delete hud;
-	if (marsSurface) {
-		delete marsSurface;
-		marsSurface = nullptr;
-	}
+	SafeRelease(loader);
+	SafeRelease(hud);
+	SafeRelease(marsSurface);
 
+	//FIXME - Cannot kill manipulators because of a shared point given to the osg viewer
+	//SafeRelease(man);
+	//SafeRelease(human);
+	
 	// Shutdown threal pool
 	dThreadingImplementationShutdownProcessing(pSolverThreading);
 	dThreadingFreeThreadPool(pSolverThreadPool);
@@ -75,7 +90,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
         //Camera collision situation
         /////////////////////////////
 
-        mb::FirstPersonManipulator *cam = dynamic_cast<mb::FirstPersonManipulator*>(app->camManip.get());
+		mb::FirstPersonManipulator *cam = app->man;
         dGeomID camID = cam->getGeomID();
         if (o1 == camID || o2 == camID) {
 
@@ -217,8 +232,11 @@ void Application::renderLoop() {
 
     //needs to be invoked here!
     //camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 30) );
-	camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0) * osg::Matrix::rotate(-M_PI_2 * 0.28f, 1, 0, 0) 
-		* osg::Matrix::rotate(M_PI * 1.14f, 0, 0, 1) * osg::Matrix::translate(0, -17.7, -0.4));
+	//camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0) * osg::Matrix::rotate(-M_PI_2 * 0.28f, 1, 0, 0) 
+	//	* osg::Matrix::rotate(M_PI * 1.14f, 0, 0, 1) * osg::Matrix::translate(0, -17.7, -0.4));
+	//camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
+	man->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
+
 
 
     viewer.init();
@@ -226,7 +244,7 @@ void Application::renderLoop() {
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
-        hideCursor();
+        //hideCursor();
 
         viewer.advance();
         viewer.eventTraversal();
@@ -271,8 +289,15 @@ void Application::populateScene() {
 
 	//Load the ISS
 	loader = new mb::Loader("../res/models/iss_int5.ive");
-	loader->printGraph();
-	root->addChild(loader->getNode());
+	loader->setRoot("MSG");
+	root->addChild(loader->getPAT());
+
+	//osg::ref_ptr<osg::Geode> part = loader->getNode<osg::Geode>("p98"); //<- quads
+	//osg::ref_ptr<osg::Geode> part2 = loader->getNode<osg::Geode>("Node2_f3922"); //<- triangles
+
+	//osg::ref_ptr<osg::Geometry> geo = dynamic_cast<osg::Geometry*>(part2->getDrawable(0));
+	//GLenum type = geo->getPrimitiveSet(0)->getMode();
+	//root->addChild(part.get());
 
     //Add full tree to scene
     viewer.setSceneData(root.get());
@@ -281,10 +306,13 @@ void Application::populateScene() {
 	//Camera manipulator
 	man = new mb::FirstPersonManipulator(camera.get());
 	man->initCollision(pSpace, 0.1f);
-	camManip = man;
+
+	//The new human camera manipulator
+	human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEBUG_WINDOW);
 
 	//Subscribe object
-	viewer.setCameraManipulator(camManip);
+	//viewer.setCameraManipulator(man);
+	viewer.setCameraManipulator(human);
 	viewer.addEventHandler(new mb::KeyboardEventHandler(this));
 }
 
@@ -311,6 +339,7 @@ void Application::setGraphicsContext() {
 
 	// add this slave camera to the viewer, with a shift left of the projection matrix
     viewer.addSlave(camera.get());
+	
 
     //HUD
     hud = new mb::Hud();

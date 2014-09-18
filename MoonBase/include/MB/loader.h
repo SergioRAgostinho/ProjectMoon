@@ -12,6 +12,7 @@
 #include <string>
 #include <MB/object.h>
 #include <MB/findnodevisitor.h>
+#include <MB/printnodevisitor.h>
 
 namespace mb {
 
@@ -34,7 +35,10 @@ namespace mb {
 		//Change the current root node to the node with the provided name
         bool setRoot(const std::string& name);
 
-		//Prints a list of node names and types properly indented
+		//Prints a list of node names and types properly indented. 
+		//The template version provides filtering capabilities to only otput the specific type
+		void printGraph();
+		template<class osgNodeType>
 		void printGraph();
     };
 
@@ -50,6 +54,12 @@ namespace mb {
 		FindNodeVisitor<osgNodeType> nodeVisitor = FindNodeVisitor<osgNodeType>();
 		gNode->accept(nodeVisitor);
 		out.push_back(nodeVisitor.getNodeList());
+	}
+
+	template<class osgNodeType>
+	void Loader::printGraph() {
+		PrintNodeVisitor<osgNodeType> pnv;
+		gNode->accept(pnv);
 	}
 
 }

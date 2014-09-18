@@ -22,6 +22,7 @@
 #include <MB/mouseeventhandler.h>
 #include <MB/loader.h>
 #include <MB/hud.h>
+#include <MB/humanmanipulator.h>
 
 #define N_CUBES 1
 #define N_BOTTLES 100
@@ -35,8 +36,8 @@ public:
 
 	//GUI Related stuff
 	osgViewer::Viewer viewer;
-	osg::ref_ptr<osgGA::CameraManipulator> camManip;
     mb::FirstPersonManipulator *man;
+	mb::HumanManipulator *human;
 
 	//Graphical context and related traits
 	osg::ref_ptr<osg::GraphicsContext> gc;

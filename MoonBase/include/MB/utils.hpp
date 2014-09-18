@@ -10,6 +10,10 @@
 #define MoonBase_utils_hpp
 
 #include <osg/Matrix>
+#include <exception>
+
+#define SafeRelease(x) if(x) {delete x; x = nullptr;}
+#define SafeReleaseArray(x) if(x) {delete[] x; x = nullptr;}
 
 namespace mb {
 
@@ -24,5 +28,11 @@ namespace mb {
 
     void printDebugOrientation(osg::Matrix mat, osg::Quat q,  std::string opt);
 
+	class NotImplementedException : public std::exception{
+			
+		virtual const char* what() const throw() {
+			return "Code not implemented";
+		}
+	};
 }
 #endif
