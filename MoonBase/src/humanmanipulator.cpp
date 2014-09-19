@@ -8,6 +8,7 @@
 #include <osg/Texture2D>
 #include <osg/MatrixTransform>
 #include <osg/LineWidth>
+#include <osg/PositionAttitudeTransform>
 #include <iostream>
 
 
@@ -24,6 +25,8 @@ HumanManipulator::HumanManipulator(osgViewer::Viewer* v, HumanManipulatorMode mo
 	viewer = v;
 	_mode = mode;
 	sharedInitialization(mode);
+
+
 }
 
 void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
@@ -51,6 +54,12 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 
 	//Set movement to nulls
 	_movement.set(0, 0, 0);
+
+	//Flags for tracking the existence of body parts
+	l_hand = nullptr;
+	r_hand = nullptr;
+	l_hand_in_cam = osg::Vec3(-0.06, -0.1, -0.4);
+	r_hand_in_cam = osg::Vec3(0.06, -0.1, -0.4);
 }
 
 
@@ -147,6 +156,13 @@ void HumanManipulator::processSkeleton() {
 				Vector4 centre = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER];
 				_movement.set(centre.x, centre.y, centre.z);
 
+				Vector4 l_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT];
+				l_hand_in_cam.set(0.1*(l_hand_coords.x - centre.x), 0.1*(l_hand_coords.y - centre.y),
+					0.8*(l_hand_coords.z - centre.z));
+
+				Vector4 r_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT];
+				r_hand_in_cam.set(0.1*(r_hand_coords.x - centre.x), 0.1*(r_hand_coords.y - centre.y),
+					0.8*(r_hand_coords.z - centre.z));
 			}
 		}
 	}
@@ -227,6 +243,30 @@ void HumanManipulator::updateBoneDraw(Vector4 skeletonPoint_1, Vector4 skeletonP
 
 	//Flag the need for redraw
 	s_geode->getDrawable(idx)->dirtyDisplayList();
+}
+
+//Populate the scene with the models derived 
+osg::PositionAttitudeTransform* HumanManipulator::populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart) {
+
+	switch (bodyPart)
+	{
+	case mb::LEFT_HAND:
+		l_hand = new osg::PositionAttitudeTransform;
+		l_hand->addChild(model);
+		l_hand->setPosition(_eye + _rotation * l_hand_in_cam);
+		return l_hand.get();
+		break;
+	case mb::RIGHT_HAND:
+		r_hand = new osg::PositionAttitudeTransform;
+		r_hand->addChild(model);
+		r_hand->setPosition(_eye + _rotation * r_hand_in_cam);
+		return r_hand.get();
+		break;
+	default:
+		return nullptr;
+		break;
+	}
+
 }
 
 ////////////////////////////////////////////////////
@@ -317,11 +357,14 @@ bool HumanManipulator::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAction
 	switch (ea.getEventType())
 	{
 	case osgGA::GUIEventAdapter::FRAME:
+		
+		_eye = _rotation * _movement;
 
-		//if (s_updated) {
-			_eye = _rotation * _movement;
-			//s_updated = false;
-		//}
+		//Update hands position
+		if (l_hand)
+			l_hand->setPosition(_eye + _rotation * l_hand_in_cam);
+		if (r_hand)
+			r_hand->setPosition(_eye + _rotation * r_hand_in_cam);
 		break;
 	default:
 		break;

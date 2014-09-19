@@ -25,6 +25,11 @@ namespace mb {
 		DEFAULT, DEBUG_WINDOW
 	};
 
+	enum HumanManipulatorBodyPart
+	{
+		LEFT_HAND, RIGHT_HAND
+	};
+
 	class HumanManipulator :
 		public osgGA::StandardManipulator
 	{
@@ -48,6 +53,9 @@ namespace mb {
 		osg::ref_ptr<osg::Geode> s_geode;
 		osg::Vec2Array* vertex_ptr[JOINTS];
 
+		//Body members (pun intended)
+		osg::ref_ptr<osg::PositionAttitudeTransform> l_hand, r_hand;
+		osg::Vec3 l_hand_in_cam, r_hand_in_cam;
 
 		//Kinnect video feed window related
 		byte *frame;
@@ -84,6 +92,10 @@ namespace mb {
 		HumanManipulator(osgViewer::Viewer* v, HumanManipulatorMode mode);
 
 		~HumanManipulator();
+
+		//Populate the scene with the models derived 
+		osg::PositionAttitudeTransform* populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart);
+
 
 		////////////////////////////////////////////////////
 		//Required declarations for successful inheritance

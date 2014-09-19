@@ -53,7 +53,7 @@ public:
 	mb::Body *marsSurface = nullptr;
 
 	//Loaders
-	mb::Loader* loader;
+	mb::Loader* loader, *loaderLeftGlove, *loaderRightGlove;
 
     //HUD
     mb::Hud* hud;

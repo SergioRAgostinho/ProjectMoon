@@ -17,6 +17,7 @@
 *.osgt
 doc/
 textures/
+models/
 
 # User-specific files
 *.suo

@@ -14,6 +14,8 @@ Application::Application()
 
 	//model loader component
 	loader = nullptr;
+	loaderLeftGlove = nullptr;
+	loaderRightGlove = nullptr;
 
 	//heads up display component
 	hud = nullptr;
@@ -31,6 +33,8 @@ Application::~Application()
 {
 	//FIXME
 	SafeRelease(loader);
+	SafeRelease(loaderLeftGlove);
+	SafeRelease(loaderRightGlove);
 	SafeRelease(hud);
 	SafeRelease(marsSurface);
 
@@ -290,21 +294,26 @@ void Application::populateScene() {
 
 	//Load the ISS
 	loader = new mb::Loader("../res/models/iss_int5.ive");
-	//loader->printGraph();
 	loader->setRoot<osg::MatrixTransform>();
 	loader->getPAT()->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
 	loader->getPAT()->setPosition(osg::Vec3(0, -17.7, 0.4));
+	root->addChild(loader->getPAT());
 
 	//loader->setRoot("MSG");
-	root->addChild(loader->getPAT());
 	//root->addChild(loader->getNode());
-
+	
 	//osg::ref_ptr<osg::Geode> part = loader->getNode<osg::Geode>("p98"); //<- quads
 	//osg::ref_ptr<osg::Geode> part2 = loader->getNode<osg::Geode>("Node2_f3922"); //<- triangles
 
 	//osg::ref_ptr<osg::Geometry> geo = dynamic_cast<osg::Geometry*>(part2->getDrawable(0));
 	//GLenum type = geo->getPrimitiveSet(0)->getMode();
 	//root->addChild(part.get());
+
+	
+
+	//loaderGloves->getPAT()->setPosition(osg::Vec3(0, 0, 0));
+	//loaderGloves->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
+	
 
     //Add full tree to scene
     viewer.setSceneData(root.get());
@@ -316,6 +325,32 @@ void Application::populateScene() {
 
 	//The new human camera manipulator
 	human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEBUG_WINDOW);
+	
+	loaderLeftGlove = new mb::Loader("../res/models/astronautgloveleft.osgt");
+	loaderLeftGlove->setRoot<osg::MatrixTransform>();
+	loaderLeftGlove->getPAT()->setAttitude(osg::Quat(M_PI_2, osg::Vec3(0, 0, 1)));
+	loaderLeftGlove->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
+	if (human) {
+		root->addChild(human->populateBodyModels(loaderLeftGlove->getPAT(), mb::HumanManipulatorBodyPart::LEFT_HAND));
+	}
+	else
+	{
+		loaderLeftGlove->getPAT()->setPosition(osg::Vec3(-0.06, 0.4, -0.1));
+		root->addChild(loaderLeftGlove->getPAT());
+	}
+
+	loaderRightGlove = new mb::Loader("../res/models/astronautgloveright.osgt");
+	loaderRightGlove->setRoot<osg::MatrixTransform>();
+	loaderRightGlove->getPAT()->setAttitude(osg::Quat(M_PI_2, osg::Vec3(0, 0, 1)));
+	loaderRightGlove->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
+	if (human) {
+		root->addChild(human->populateBodyModels(loaderRightGlove->getPAT(), mb::HumanManipulatorBodyPart::RIGHT_HAND));
+	}
+	else
+	{
+		loaderRightGlove->getPAT()->setPosition(osg::Vec3(0.06, 0.4, -0.1));
+		root->addChild(loaderRightGlove->getPAT());
+	}
 
 	//Subscribe object
 	//viewer.setCameraManipulator(man);
