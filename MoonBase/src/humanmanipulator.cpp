@@ -11,6 +11,13 @@
 #include <osg/PositionAttitudeTransform>
 #include <iostream>
 
+//Copied from ODE
+#ifndef M_PI
+#define M_PI 3.1415926535897932384626433832795029
+#endif
+#ifndef M_PI_2
+#define M_PI_2 1.5707963267948966192313216916398
+#endif
 
 using namespace mb;
 
@@ -60,6 +67,8 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 	r_hand = nullptr;
 	l_hand_in_cam = osg::Vec3(-0.06, -0.1, -0.4);
 	r_hand_in_cam = osg::Vec3(0.06, -0.1, -0.4);
+	l_hand_quat_in_cam = osg::Quat();
+	r_hand_quat_in_cam = osg::Quat();
 }
 
 
@@ -146,13 +155,19 @@ void HumanManipulator::processSkeleton() {
 				s_idx = i;
 
 				//Reset mask so it is visible again
-				s_geode->setNodeMask(0xff);
+				if (_mode == DEBUG_WINDOW)
+					s_geode->setNodeMask(0xff);
+				if (l_hand)
+					l_hand->setNodeMask(0xff);
+				if (r_hand)
+					r_hand->setNodeMask(0xff);
 			}
 
 			//The original skeleton is being tracked
 			if (s_track_id == s_frame.SkeletonData[i].dwTrackingID) {
 				activeSkeletonPresent = true;
 
+				//Position update
 				Vector4 centre = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER];
 				_movement.set(centre.x, centre.y, centre.z);
 
@@ -163,6 +178,16 @@ void HumanManipulator::processSkeleton() {
 				Vector4 r_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT];
 				r_hand_in_cam.set(0.1*(r_hand_coords.x - centre.x), 0.1*(r_hand_coords.y - centre.y),
 					0.8*(r_hand_coords.z - centre.z));
+
+				//Attitude updates
+				NUI_SKELETON_BONE_ORIENTATION boneOrientations[NUI_SKELETON_POSITION_COUNT];
+				NuiSkeletonCalculateBoneOrientations(&(s_frame.SkeletonData[i]), boneOrientations);
+
+				Vector4 l_wrist_quat = boneOrientations[NUI_SKELETON_POSITION_WRIST_LEFT].absoluteRotation.rotationQuaternion;
+				l_hand_quat_in_cam.set(l_wrist_quat.x, l_wrist_quat.y, l_wrist_quat.z, l_wrist_quat.w);
+
+				Vector4 r_wrist_quat = boneOrientations[NUI_SKELETON_POSITION_WRIST_RIGHT].absoluteRotation.rotationQuaternion;
+				r_hand_quat_in_cam.set(r_wrist_quat.x, r_wrist_quat.y, r_wrist_quat.z, r_wrist_quat.w);
 			}
 		}
 	}
@@ -173,7 +198,12 @@ void HumanManipulator::processSkeleton() {
 		s_idx = -1;
 
 		//Apply mask so it doesn't get rendered
-		s_geode->setNodeMask(0x00);
+		if (_mode == DEBUG_WINDOW)
+			s_geode->setNodeMask(0x00);
+		if (l_hand)
+			l_hand->setNodeMask(0x00);
+		if (r_hand)
+			r_hand->setNodeMask(0x00);
 	}
 }
 
@@ -353,6 +383,10 @@ bool HumanManipulator::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAction
 	}
 
 	
+	//Pre-computing quaternion corrections
+	static osg::Quat post_mult = osg::Quat(M_PI_2, osg::Vec3(1, 0, 0));
+
+
 	//Traditional manipulator events
 	switch (ea.getEventType())
 	{
@@ -361,10 +395,19 @@ bool HumanManipulator::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAction
 		_eye = _rotation * _movement;
 
 		//Update hands position
-		if (l_hand)
+
+		if (l_hand) {
 			l_hand->setPosition(_eye + _rotation * l_hand_in_cam);
-		if (r_hand)
+
+			static osg::Quat l_pre_mult = osg::Quat(-M_PI_2 * 0.5f, osg::Vec3(1, 0, 0)) * osg::Quat(M_PI_2, osg::Vec3(0, 0, 1));
+			l_hand->setAttitude(l_pre_mult * l_hand_quat_in_cam * post_mult);
+		}
+		if (r_hand) {
 			r_hand->setPosition(_eye + _rotation * r_hand_in_cam);
+
+			static osg::Quat r_pre_mult = osg::Quat(M_PI_2 * 0.5f, osg::Vec3(1, 0, 0)) * osg::Quat(M_PI_2, osg::Vec3(0, 0, 1));
+			r_hand->setAttitude(r_pre_mult * r_hand_quat_in_cam * post_mult);
+		}
 		break;
 	default:
 		break;

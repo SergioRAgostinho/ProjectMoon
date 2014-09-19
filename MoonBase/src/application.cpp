@@ -8,8 +8,14 @@
 
 
 
-Application::Application()
+Application::Application(int argc, char* argv[])
 {
+	//Parse console arguments if there any modifier
+	modes = APP_MODE_STANDARD;
+	if (argc > 1)
+		parseConsoleArgument(argc, argv);
+
+	//Initialize physics library as soon as possible
 	dInitODE2(0);
 
 	//model loader component
@@ -57,6 +63,37 @@ Application::~Application()
 
 	//Close library
 	dCloseODE();
+}
+
+void Application::parseConsoleArgument(int argc, char* argv[]) {
+
+
+
+	//Control for invalid arguments
+	bool invalid_argument = false;
+
+	//Sweep argument list. 
+	for (int i = 1; i < argc; i++)
+	{
+		std::string option(argv[i]);
+		
+		//Discard improperly constructed switches
+		if (!option.compare("-debug")) {
+			modes = APP_MODE_DEBUG;
+		}
+		else if (!option.compare("-tv"))
+		{
+			modes = modes | APP_MODE_DEBUG;
+		}
+		else
+		{
+			invalid_argument = true;
+		}
+	}
+
+	//Output warning in case there were arguments passed incorrectly
+	if (invalid_argument)
+		std::cerr << "Some console arguments could not be parsed" << std::endl;
 }
 
 int Application::run()
@@ -324,11 +361,18 @@ void Application::populateScene() {
 	man->initCollision(pSpace, 0.1f);
 
 	//The new human camera manipulator
-	human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEBUG_WINDOW);
+	if (modes & APP_MODE_DEBUG)
+	{
+		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEBUG_WINDOW);
+	}
+	else
+	{
+		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEFAULT);
+
+	}
 	
 	loaderLeftGlove = new mb::Loader("../res/models/astronautgloveleft.osgt");
 	loaderLeftGlove->setRoot<osg::MatrixTransform>();
-	loaderLeftGlove->getPAT()->setAttitude(osg::Quat(M_PI_2, osg::Vec3(0, 0, 1)));
 	loaderLeftGlove->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
 	if (human) {
 		root->addChild(human->populateBodyModels(loaderLeftGlove->getPAT(), mb::HumanManipulatorBodyPart::LEFT_HAND));
@@ -341,7 +385,6 @@ void Application::populateScene() {
 
 	loaderRightGlove = new mb::Loader("../res/models/astronautgloveright.osgt");
 	loaderRightGlove->setRoot<osg::MatrixTransform>();
-	loaderRightGlove->getPAT()->setAttitude(osg::Quat(M_PI_2, osg::Vec3(0, 0, 1)));
 	loaderRightGlove->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
 	if (human) {
 		root->addChild(human->populateBodyModels(loaderRightGlove->getPAT(), mb::HumanManipulatorBodyPart::RIGHT_HAND));
@@ -379,7 +422,7 @@ void Application::setGraphicsContext() {
 	camera->setDrawBuffer(bufferL);
 	camera->setReadBuffer(bufferL);
 
-	// add this slave camera to the viewer, with a shift left of the projection matrix
+	// add this slave camera to the viewer
     viewer.addSlave(camera.get());
 	
 

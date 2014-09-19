@@ -27,9 +27,19 @@
 #define N_CUBES 1
 #define N_BOTTLES 100
 
+#define APP_MODE_STANDARD 0x00
+#define APP_MODE_DEBUG 0x01
+#define APP_MODE_TV 0x02
+
 class Application
 {
 public:
+	/////////////////////
+	// Application Options
+	/////////////////////
+
+	unsigned long int modes;
+
 	/////////////////////
 	// Open Scene Graph
 	/////////////////////
@@ -97,9 +107,10 @@ public:
     //To hide the cursor in every windows of the osgViewer
     void hideCursor();
 
-    
+    //Console argument parse
+	void parseConsoleArgument(int argc, char* argv[]);
 
-	Application();
+	Application(int argc, char* argv[]);
 	~Application();
 
 	int run();

@@ -9,6 +9,7 @@
 #include <osgGA/StandardManipulator>
 #include <Kinect/sensor.h>
 
+
 //Kinect image specs
 #define HEIGHT 480
 #define WIDTH  640
@@ -56,6 +57,7 @@ namespace mb {
 		//Body members (pun intended)
 		osg::ref_ptr<osg::PositionAttitudeTransform> l_hand, r_hand;
 		osg::Vec3 l_hand_in_cam, r_hand_in_cam;
+		osg::Quat l_hand_quat_in_cam, r_hand_quat_in_cam;
 
 		//Kinnect video feed window related
 		byte *frame;
