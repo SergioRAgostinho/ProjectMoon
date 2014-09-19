@@ -11,9 +11,13 @@
 
 #include <osg/Matrix>
 #include <exception>
+#include <iostream>
 
 #define SafeRelease(x) if(x) {delete x; x = nullptr;}
 #define SafeReleaseArray(x) if(x) {delete[] x; x = nullptr;}
+
+#define LOG(x) std::clog << "[LOG] " << x << std::endl
+#define ERROR(x) std::cerr << "[ERROR] " << x << std::endl
 
 namespace mb {
 

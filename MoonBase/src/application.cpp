@@ -80,10 +80,12 @@ void Application::parseConsoleArgument(int argc, char* argv[]) {
 		//Discard improperly constructed switches
 		if (!option.compare("-debug")) {
 			modes = APP_MODE_DEBUG;
+			LOG("Debug window set up");
 		}
 		else if (!option.compare("-tv"))
 		{
-			modes = modes | APP_MODE_DEBUG;
+			modes = modes | APP_MODE_TV;
+			LOG("TV mode set up");
 		}
 		else
 		{
@@ -93,7 +95,7 @@ void Application::parseConsoleArgument(int argc, char* argv[]) {
 
 	//Output warning in case there were arguments passed incorrectly
 	if (invalid_argument)
-		std::cerr << "Some console arguments could not be parsed" << std::endl;
+		ERROR("Some arguments could not be parsed");
 }
 
 int Application::run()
