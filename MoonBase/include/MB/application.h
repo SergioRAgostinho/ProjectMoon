@@ -30,6 +30,7 @@
 #define APP_MODE_STANDARD 0x00
 #define APP_MODE_DEBUG 0x01
 #define APP_MODE_TV 0x02
+#define APP_MODE_STEREO 0x04
 
 class Application
 {

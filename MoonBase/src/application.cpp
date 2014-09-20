@@ -80,12 +80,17 @@ void Application::parseConsoleArgument(int argc, char* argv[]) {
 		//Discard improperly constructed switches
 		if (!option.compare("-debug")) {
 			modes = APP_MODE_DEBUG;
-			LOG("Debug window set up");
+			DEBUG_LOG("Debug window set up");
 		}
 		else if (!option.compare("-tv"))
 		{
-			modes = modes | APP_MODE_TV;
-			LOG("TV mode set up");
+			modes |= APP_MODE_TV;
+			DEBUG_LOG("TV mode set up");
+		}
+		else if (!option.compare("-stereo"))
+		{
+			modes |= APP_MODE_STEREO;
+			DEBUG_LOG("Stereo mode set up");
 		}
 		else
 		{
@@ -95,7 +100,7 @@ void Application::parseConsoleArgument(int argc, char* argv[]) {
 
 	//Output warning in case there were arguments passed incorrectly
 	if (invalid_argument)
-		ERROR("Some arguments could not be parsed");
+		DEBUG_ERROR("Some arguments could not be parsed");
 }
 
 int Application::run()
@@ -405,32 +410,65 @@ void Application::populateScene() {
 
 void Application::setGraphicsContext() {
 
+	//Get information on the screen set-up
+	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
+	osg::GraphicsContext::ScreenIdentifier si;
+	si.readDISPLAY();
+	osg::GraphicsContext::ScreenSettings settings;
+	int screen_id = -1;
+
+
+	if (modes & APP_MODE_TV) {
+		int n_screens = wsi->getNumScreens(si);
+
+		//The tv has a vertical resolution of 1080
+		for (int i = 0; i < n_screens; i++)
+		{
+			wsi->getScreenSettings(osg::GraphicsContext::ScreenIdentifier(i), settings);
+			if (settings.height == 1080) {
+				//Most likely our active TV
+				screen_id = i;
+				break;
+			}
+		}
+	}
+	else
+	{
+		screen_id = 0;
+		wsi->getScreenSettings(si, settings);
+	}
+
 	traits = new osg::GraphicsContext::Traits;
-	traits->x = 100;
-	traits->y = 100;
-	traits->width = 1280;
-	traits->height = 720;
-	traits->windowDecoration = true;
+	traits->x = 0;
+	traits->y = 0;
+	traits->width = settings.width;
+	traits->height = settings.height;
+	traits->windowDecoration = false;
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
 	traits->useCursor = false;
+	traits->overrideRedirect = true;
 
 	gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-
-	camera = new osg::Camera;
+	camera = viewer.getCamera();
 	camera->setGraphicsContext(gc.get());
-    camera->setViewport(new osg::Viewport(0, 0, traits->width , traits->height));
-	GLenum bufferL = traits->doubleBuffer ? GL_BACK : GL_FRONT;
-	camera->setDrawBuffer(bufferL);
-	camera->setReadBuffer(bufferL);
+	GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
+	camera->setDrawBuffer(buffer);
+	camera->setReadBuffer(buffer);
 
-	// add this slave camera to the viewer
-    viewer.addSlave(camera.get());
-	
+	viewer.setUpViewOnSingleScreen(screen_id);
 
-    //HUD
-    hud = new mb::Hud();
-    hud->setScreenDimensions(traits->height, traits->width);
+	//Activate stereo
+	if (modes & APP_MODE_STEREO) {
+		osg::ref_ptr<osg::DisplaySettings> disp_settings = osg::DisplaySettings::instance();
+		disp_settings->setStereoMode(osg::DisplaySettings::HORIZONTAL_SPLIT);
+		disp_settings->setEyeSeparation(0.003);
+		disp_settings->setStereo(true);
+	}
+
+	//HUD
+	hud = new mb::Hud();
+	hud->setScreenDimensions(traits->height, traits->width);
 
 }
 
