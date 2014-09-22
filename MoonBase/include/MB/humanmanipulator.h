@@ -5,6 +5,14 @@
 #ifndef MoonBase_humanmanipulator_h
 #define MoonBase_humanmanipulator_h
 
+
+//In windows we can properly compile ODE
+#ifndef dDOUBLE
+#define dDOUBLE
+#endif
+
+
+#include <ode/ode.h>
 #include <osgViewer/Viewer>
 #include <osgGA/StandardManipulator>
 #include <Kinect/sensor.h>
@@ -46,6 +54,12 @@ namespace mb {
 		//Kinect sensor object
 		Kinect::Sensor kinect;
 
+		//Collision related
+		dSpaceID pSpace;
+		dGeomID pGeom;
+		bool revert;
+		osg::Vec3d _revertEye;
+
 		//Skeleton frame, tracking id, array index and the necessary pointers to update the 
 		//skeletal rendering efficiently
 		NUI_SKELETON_FRAME s_frame;
@@ -58,6 +72,11 @@ namespace mb {
 		osg::ref_ptr<osg::PositionAttitudeTransform> l_hand, r_hand;
 		osg::Vec3 l_hand_in_cam, r_hand_in_cam;
 		osg::Quat l_hand_quat_in_cam, r_hand_quat_in_cam;
+
+		//Hand representation sensitivity parameters
+		const float front_offset, front_scale;
+		const float lat_offset, lat_scale;
+		const float vert_offset, vert_scale;
 
 		//Kinnect video feed window related
 		byte *frame;
@@ -87,6 +106,8 @@ namespace mb {
 		void createSkeletonDraw();
 		void updateSkeletonDraw();
 		void updateBoneDraw(Vector4 skeletonPoint_1, Vector4 skeletonPoint_2, short unsigned int idx);
+
+
 		
 	public:
 
@@ -95,9 +116,21 @@ namespace mb {
 
 		~HumanManipulator();
 
+		//Provide reference to geom object
+		dGeomID getGeomID();
+
 		//Populate the scene with the models derived 
 		osg::PositionAttitudeTransform* populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart);
 
+		//Init collision functionalities
+		void initCollision(dSpaceID s);
+		void initCollision(dSpaceID s, float colRadius);
+
+		//Check the status on the revert flage
+		void armRevert(double x, double y, double z);
+
+		//Process an armed revert
+		void processRevert();
 
 		////////////////////////////////////////////////////
 		//Required declarations for successful inheritance

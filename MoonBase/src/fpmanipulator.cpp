@@ -100,7 +100,10 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
 
             _eye+= _rotation * _mouvement;
             _eye += osg::Vec3d(0,0,deltaTZ);
-            dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+			if (pGeom)
+			{
+				dGeomSetPosition(pGeom, (dReal)_eye.x(), (dReal)_eye.y(), (dReal)_eye.z());
+			}
             rotateYawPitch(_rotation, deltaRX * 0.001, deltaRY * 0.001, osg::Vec3(0,0,1));
             deltaTZ = 0;
             deltaRX = 0;
@@ -398,7 +401,7 @@ void FirstPersonManipulator::initCollision(dSpaceID s, float colRadius) {
 
 //Check the status on the revert flag
 void FirstPersonManipulator::armRevert(double x, double y, double z) {
-    _revertEye.set(x,y,z);
+    _revertEye += osg::Vec3(x,y,z);
     revert = true;
 }
 
@@ -420,7 +423,8 @@ void FirstPersonManipulator::setByMatrix(const osg::Matrixd& matrix){
 
     // set variables
     _eye = matrix.getTrans();
-    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+	if (pGeom)
+		dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
     _rotation = matrix.getRotate();
 
     //set the mouse to the center of screen

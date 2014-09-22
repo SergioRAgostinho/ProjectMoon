@@ -21,9 +21,12 @@ namespace mb {
 	{
 		//Physic engine identities
 		dBodyID pBody;
-		dGeomID pGeom;
+		dGeomID *pGeom;
 		dWorldID pWorld;
 		dSpaceID pSpace;
+
+		int *pGeomClass;
+		unsigned int n_pGeom;
 
 		//Shared routines for all constructors
 		void sharedConstructor();
@@ -59,7 +62,7 @@ namespace mb {
 		void setAttitude(dQuaternion quat);
 		void setAttitude(double x, double y, double z, double w);
 		void setAttitude(osg::Matrix mat);
-		//additional definition to go around the overload impossibility
+		//additional definition to go around the overload constraint
 		void setAttitudeMatrixODE(dMatrix3 mat);
 
 	protected:

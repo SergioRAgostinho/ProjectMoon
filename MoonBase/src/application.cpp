@@ -130,6 +130,18 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	if (b1 && b2 && dAreConnected(b1, b2))
 		return;
 
+	//mb::FirstPersonManipulator *cam = app->man;
+	mb::HumanManipulator *cam = app->human;
+	dGeomID camID = cam->getGeomID();
+
+	//We need to exit here if the objects are both static and not cameras
+	//if ((!b1 && !b2) && !(o1 == camID || o2 == camID))
+	if (!(b1 || b2 || o1 == camID || o2 == camID))
+	{
+		//Both geometries are static and none is a camera
+		return;
+	}
+
 	const int N = 64;
 	dContact contact[N];
 	n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
@@ -138,14 +150,15 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
         //Camera collision situation
         /////////////////////////////
 
-		mb::FirstPersonManipulator *cam = app->man;
-        dGeomID camID = cam->getGeomID();
+
         if (o1 == camID || o2 == camID) {
+			//Debug Code
 			static unsigned long nr = 0;
 			int class1 = dGeomGetClass(o1);
 			int class2 = dGeomGetClass(o2);
 			DEBUG_LOG("crashing against something " << nr++);
-            //both static objects
+
+			//both static objects
             if (b1 == nullptr && b2 == nullptr) {
 
                 //Find the normal more burried into the object
@@ -175,6 +188,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
             return;
         }
 
+#if 0
         //////////////////////////////
         //// Cameras grabbed object
         ////////////////////////////
@@ -240,6 +254,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
                 }
             }
         }
+#endif
 
         /////////////////////////
         /// Remaining stuff
@@ -310,6 +325,8 @@ void Application::renderLoop() {
         if (grabbedBody && man->getGrabbedComplete())
             grabbedBody->processRevert();
 
+		human->processRevert();
+
 		//Update our objects
         
 
@@ -330,14 +347,6 @@ void Application::populateScene() {
 	//Add HUD
 	root->addChild(hud->init());
 
-    //Place the surface
-	//loader = new mb::Loader("../res/models/MarsSurface.osgt");
- //   osg::ref_ptr<osg::Geode> surface = loader->getNode<osg::Geode>("planetSurface-GEODE");
- //   marsSurface = new mb::Body(surface.get());
- //   marsSurface->initCollision(pSpace);
-	//root->addChild(marsSurface->getPAT());
-
-
 	////Load the ISS (working)
 	//loader = new mb::Loader("../res/models/iss_int5.ive");
 	//loader->setRoot<osg::MatrixTransform>();
@@ -349,10 +358,10 @@ void Application::populateScene() {
 	loader = new mb::Loader("../res/models/iss_int5.ive");
 	osg::ref_ptr<osg::Node> iss_trans = dynamic_cast<osg::Node*>(loader->getNode<osg::MatrixTransform>());
 	iss = new mb::Group(iss_trans.get());
-	iss->getPAT()->setPivotPoint(osg::Vec3(0, -18.4, -0.4));
+	iss->getPAT()->setPivotPoint(osg::Vec3(0, -19.4, -0.4));
 	iss->setCollisionSpace(pSpace);
-	iss->setCollisionBoundingBox(-.9, .9, -4, 1.6, -1, .5);
-	//iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
+	iss->setCollisionBoundingBox(-.9, .9, -3, 2.6, -1, .5);
+	iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
 	root->addChild(iss->getPAT());
 
 
@@ -367,18 +376,10 @@ void Application::populateScene() {
 	//GLenum type = geo->getPrimitiveSet(0)->getMode();
 	//root->addChild(part.get());
 
-	
-
-	//loaderGloves->getPAT()->setPosition(osg::Vec3(0, 0, 0));
-	//loaderGloves->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
-	
-
-
-
 	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
 	//Camera manipulator
 	man = new mb::FirstPersonManipulator(camera.get());
-	man->initCollision(pSpace, 0.1f);
+	//man->initCollision(pSpace, 0.1f);
 
 	//The new human camera manipulator
 	if (modes & APP_MODE_DEBUG)
@@ -390,6 +391,7 @@ void Application::populateScene() {
 		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEFAULT);
 
 	}
+	human->initCollision(pSpace, 0.1f);
 	
 	loaderLeftGlove = new mb::Loader("../res/models/astronautgloveleft.osgt");
 	loaderLeftGlove->setRoot<osg::MatrixTransform>();
@@ -415,9 +417,6 @@ void Application::populateScene() {
 		root->addChild(loaderRightGlove->getPAT());
 	}
 
-	//Test code
-	loaderLeftGlove->printGraph();
-	
 	//Add full tree to scene
 	viewer.setSceneData(root.get());
 	

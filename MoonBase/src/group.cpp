@@ -25,10 +25,16 @@ void Group::sharedConstructor()
 	pGeom = nullptr;
 	pWorld = nullptr;
 	pSpace = nullptr;
+
+	pGeomClass = nullptr;
+
+	n_pGeom = 0;
 }
 
 Group::~Group()
 {
+	SafeReleaseArray(pGeom);
+	SafeReleaseArray(pGeomClass);
 }
 
 //Set new PAT node
@@ -61,8 +67,11 @@ void Group::setCollisionSpace(dSpaceID sid)
 	//If the collision space is set and theres a geometry already in it we need to update it to the new space
 	if (pGeom)
 	{
-		dSpaceRemove(pSpace, pGeom);
-		dSpaceAdd(sid, pGeom);
+		for (unsigned int i = 0; i < n_pGeom; i++)
+		{
+			dSpaceRemove(pSpace, pGeom[i]);
+			dSpaceAdd(sid, pGeom[i]);
+		}
 	}
 
 	pSpace = sid;
@@ -73,8 +82,50 @@ void Group::setCollisionBoundingBox(double xmin, double xmax, double ymin, doubl
 {
 	if (pSpace)
 	{
-		pGeom = dCreateBox(pSpace, xmax - xmin, ymax - ymin, zmax - zmin);
-		dGeomSetPosition(pGeom, (xmax + xmin)*0.5, (ymax + ymin)*0.5, (zmax + zmin)*0.5);
+		//This is not the way. We need to set up a group of four plane with normals pointing inwards
+		
+		//Back up the old and allocate the new vector
+		unsigned int old_n_pGeom = n_pGeom;
+		n_pGeom = old_n_pGeom + 6;
+		
+		dGeomID *old_pGeom = pGeom;
+		pGeom = new dGeomID[n_pGeom];
+
+		int *old_pGeomClass = pGeomClass;
+		pGeomClass = new int[n_pGeom];
+
+		//Copy the old 
+		memcpy(pGeom, old_pGeom, old_n_pGeom*sizeof(dGeomID));
+		memcpy(pGeomClass, old_pGeomClass, old_n_pGeom*sizeof(int));
+
+		//Delete the old
+		SafeReleaseArray(old_pGeom);
+		SafeReleaseArray(old_pGeomClass);
+
+		//Set the new geometries
+		//Lower x
+		pGeom[old_n_pGeom] = dCreatePlane(pSpace, 1, 0, 0, xmin);
+		pGeomClass[old_n_pGeom] = dPlaneClass;
+
+		//Upper x
+		pGeom[old_n_pGeom + 1] = dCreatePlane(pSpace, -1, 0, 0, -xmax);
+		pGeomClass[old_n_pGeom + 1] = dPlaneClass;
+
+		//Lower y
+		pGeom[old_n_pGeom + 2] = dCreatePlane(pSpace, 0, 1, 0, ymin);
+		pGeomClass[old_n_pGeom + 2] = dPlaneClass;
+
+		//Upper y
+		pGeom[old_n_pGeom + 3] = dCreatePlane(pSpace, 0, -1, 0, -ymax);
+		pGeomClass[old_n_pGeom + 3] = dPlaneClass;
+
+		//Lower z
+		pGeom[old_n_pGeom + 4] = dCreatePlane(pSpace, 0, 0, 1, zmin);
+		pGeomClass[old_n_pGeom + 4] = dPlaneClass;
+
+		//Upper z
+		pGeom[old_n_pGeom + 5] = dCreatePlane(pSpace, 0, 0, -1, -zmax);
+		pGeomClass[old_n_pGeom + 5] = dPlaneClass;
 	}
 	else
 	{
@@ -90,28 +141,34 @@ void Group::setAttitude(osg::Quat quat)
 	gPAT->setAttitude(quat);
 	if (pGeom)
 	{
-		dQuaternion q = { (dReal)quat.w(), (dReal)quat.x(), (dReal)quat.y(), (dReal)quat.z() };
-		dGeomSetQuaternion(pGeom, q);
+		for (unsigned int i = 0; i < n_pGeom; i++)
+		{
+			//We need to ensure the geom is placeable, aka different than infinite plane
+			if (pGeomClass[i] != dPlaneClass)
+			{
+				dQuaternion q = { (dReal)quat.w(), (dReal)quat.x(), (dReal)quat.y(), (dReal)quat.z() };
+				dGeomSetQuaternion(pGeom[i], q);
+			}
+			else
+			{
+				//If it is a plane we need to rotate the normal unit vector accordingly
+				dReal params[4];
+				dGeomPlaneGetParams(pGeom[i], params);
+				osg::Vec3 rotated = quat * osg::Vec3(params[0], params[1], params[2]);
+				dGeomPlaneSetParams(pGeom[i], rotated.x(), rotated.y(), rotated.z(), params[3]);
+			}
+		}
 	}
 }
 
 void Group::setAttitude(dQuaternion quat)
 {
-	gPAT->setAttitude(osg::Quat(quat[1], quat[2], quat[3], quat[0]));
-	if (pGeom)
-	{
-		dGeomSetQuaternion(pGeom, quat);
-	}
+	setAttitude(osg::Quat(quat[1], quat[2], quat[3], quat[0]));
 }
 
 void Group::setAttitude(double x, double y, double z, double w)
 {
-	gPAT->setAttitude(osg::Quat(x, y, z, w));
-	if (pGeom)
-	{
-		dQuaternion q = { (dReal) w, (dReal)x, (dReal)y, (dReal)z };
-		dGeomSetQuaternion(pGeom, q);
-	}
+	setAttitude(osg::Quat(x, y, z, w));
 }
 
 void Group::setAttitude(osg::Matrix mat)
@@ -122,12 +179,8 @@ void Group::setAttitude(osg::Matrix mat)
 void Group::setAttitudeMatrixODE(dMatrix3 mat)
 {
 	DEBUG_WARNING("setAttitudeMatrixODE has not been tested yet");
-	gPAT->setAttitude(osg::Matrix(mat[0], mat[1], mat[2], 0,
+	setAttitude(osg::Matrix(mat[0], mat[1], mat[2], 0,
 		mat[4], mat[5], mat[6], 0,
 		mat[7], mat[8], mat[9], 0,
 		0, 0, 0, 0).getRotate());
-	if (pGeom)
-	{
-		dGeomSetRotation(pGeom, mat);
-	}
 }
