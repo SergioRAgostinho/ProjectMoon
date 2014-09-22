@@ -107,7 +107,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             deltaRY = 0;
             frameEvent = true;
 
-
+			//DEBUG_LOG("x: " << _eye.x() << " y: " << _eye.y() << " z: " << _eye.z());
             break;
         }
             

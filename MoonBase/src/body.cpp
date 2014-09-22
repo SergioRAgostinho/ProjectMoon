@@ -228,8 +228,24 @@ Body* Body::clone() {
 
 void Body::initCollision(dSpaceID space) {
     pSpace = space;
-    if(!pGeom)
-        triOGS2ODE();
+	if (!pGeom) {
+		if (gGeode->getDrawableList().size() > 1)
+		{
+			DEBUG_EXCEPTION("NotImplemented - Can only handle one drawable");
+			throw NotImplementedException();
+		}
+
+		GLenum primitive = gGeode->getDrawable(0)->asGeometry()->getPrimitiveSet(0)->getMode();
+		switch (primitive)
+		{
+		case GL_TRIANGLES:
+			triOGS2ODE();
+		default:
+			DEBUG_EXCEPTION("NotImplemented - Cannot handle this type of primitive");
+			throw NotImplementedException(); 
+			break;
+		}
+	}
 }
 
 void Body::initPhysics(dWorldID world, dSpaceID space) {
@@ -408,9 +424,18 @@ void Body::update() {
 
 bool Body::triOGS2ODE() {
 
+	if (gGeode->getDrawableList().size() > 1) {
+		DEBUG_EXCEPTION("NotImplemented -  " << "triOSG2ODE doesn't know how to handle multiple drawables");
+		throw NotImplementedException();
+		return false;
+	}
+
     osg::Geometry* geo = gGeode->getDrawableList().front()->asGeometry();
-    if (!geo || geo->getPrimitiveSet(0)->getMode() != GL_TRIANGLES)
-        return false;
+	if (!geo || geo->getPrimitiveSet(0)->getMode() != GL_TRIANGLES) {
+		DEBUG_EXCEPTION("NotImplemented -  " << "triOSG2ODE doesn't know how to handle primitives different than GL_TRIANGLE");
+		throw NotImplementedException();
+		return false;
+	}
 
     osg::Vec3Array* array = dynamic_cast<osg::Vec3Array*>(geo->getVertexArray());
     unsigned int nVerts = array->getNumElements();

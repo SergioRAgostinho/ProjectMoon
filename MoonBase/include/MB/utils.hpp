@@ -17,7 +17,9 @@
 #define SafeReleaseArray(x) if(x) {delete[] x; x = nullptr;}
 
 #define DEBUG_LOG(x) std::clog << "[LOG] " << x << std::endl
+#define DEBUG_WARNING(x) std::clog << "[WARNING] " << x << std::endl
 #define DEBUG_ERROR(x) std::cerr << "[ERROR] " << x << std::endl
+#define DEBUG_EXCEPTION(x) std::cerr << "[EXCEPTION] " << x << " - in " << __FILE__ << " line " << __LINE__ << std::endl
 
 namespace mb {
 

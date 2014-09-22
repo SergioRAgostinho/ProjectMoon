@@ -44,12 +44,12 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 	//Start Kinect sensor and object
 	HRESULT hr = kinect.Initialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON);
 	if (FAILED(hr))
-		std::cerr << "Sensor was not properly initialized" << std::endl;
+		DEBUG_ERROR("Sensor was not properly initialized");
 
 	//Activate seated mode, which is deactivated by default
 	hr = kinect.ToggleSeatedMode();
 	if (SUCCEEDED(hr))
-		std::clog << "Activated seated mode" << std::endl;
+		DEBUG_LOG("Activated seated mode");
 
 
 	//Check if we really need to create the second viewer otherwise exit

@@ -27,7 +27,7 @@ Application::Application(int argc, char* argv[])
 	hud = nullptr;
 
 	//scene models
-	marsSurface = nullptr;
+	left_glove = nullptr;
 
 	//Manipulators
 	man = nullptr;
@@ -42,7 +42,7 @@ Application::~Application()
 	SafeRelease(loaderLeftGlove);
 	SafeRelease(loaderRightGlove);
 	SafeRelease(hud);
-	SafeRelease(marsSurface);
+	SafeRelease(left_glove);
 
 	//FIXME - Cannot kill manipulators because of a shared point given to the osg viewer
 	//SafeRelease(man);
@@ -100,7 +100,7 @@ void Application::parseConsoleArgument(int argc, char* argv[]) {
 
 	//Output warning in case there were arguments passed incorrectly
 	if (invalid_argument)
-		DEBUG_ERROR("Some arguments could not be parsed");
+		DEBUG_WARNING("Some arguments could not be parsed");
 }
 
 int Application::run()
@@ -141,7 +141,10 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 		mb::FirstPersonManipulator *cam = app->man;
         dGeomID camID = cam->getGeomID();
         if (o1 == camID || o2 == camID) {
-
+			static unsigned long nr = 0;
+			int class1 = dGeomGetClass(o1);
+			int class2 = dGeomGetClass(o2);
+			DEBUG_LOG("crashing against something " << nr++);
             //both static objects
             if (b1 == nullptr && b2 == nullptr) {
 
@@ -151,7 +154,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
                 for (i = 0; i<n; ++i) {
                     double testDepth = (double) contact[i].geom.depth;
                     if (testDepth > depth) {
-                        depth = testDepth;
+						depth = testDepth; 
                         iMaxDepth = i;
                     }
                 }
@@ -164,6 +167,9 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 
                 return;
             }
+
+			
+
 
             //FIXME: Remove when trying collision between static, grabbed object and camera
             return;
@@ -255,7 +261,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 void Application::setPhysics() {
 	// recreate world
 	pWorld = dWorldCreate();
-	dWorldSetGravity(pWorld, 0, 0, -9.81);
+	dWorldSetGravity(pWorld, 0, 0, -0.01);
 	dWorldSetCFM(pWorld, 1e-10);
 	dWorldSetERP(pWorld, 0.8);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
@@ -279,11 +285,6 @@ void Application::renderLoop() {
 
 
     //needs to be invoked here!
-    //camManip->setByMatrix(osg::Matrix::rotate(M_PI/2.0, 1, 0, 0 ) * osg::Matrix::rotate(0, 1, 0, 0 ) * osg::Matrix::translate(0, -30, 30) );
-	//camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0) * osg::Matrix::rotate(-M_PI_2 * 0.28f, 1, 0, 0) 
-	//	* osg::Matrix::rotate(M_PI * 1.14f, 0, 0, 1) * osg::Matrix::translate(0, -17.7, -0.4));
-	//camManip->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
-	
 	man->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
 
 
@@ -336,13 +337,26 @@ void Application::populateScene() {
  //   marsSurface->initCollision(pSpace);
 	//root->addChild(marsSurface->getPAT());
 
-	//Load the ISS
-	loader = new mb::Loader("../res/models/iss_int5.ive");
-	loader->setRoot<osg::MatrixTransform>();
-	loader->getPAT()->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
-	loader->getPAT()->setPosition(osg::Vec3(0, -17.7, 0.4));
-	root->addChild(loader->getPAT());
 
+	////Load the ISS (working)
+	//loader = new mb::Loader("../res/models/iss_int5.ive");
+	//loader->setRoot<osg::MatrixTransform>();
+	//loader->getPAT()->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
+	//loader->getPAT()->setPosition(osg::Vec3(0, -17.7, 0.4));
+	//root->addChild(loader->getPAT());
+
+	//Load the ISS (tests)
+	loader = new mb::Loader("../res/models/iss_int5.ive");
+	osg::ref_ptr<osg::Node> iss_trans = dynamic_cast<osg::Node*>(loader->getNode<osg::MatrixTransform>());
+	iss = new mb::Group(iss_trans.get());
+	iss->getPAT()->setPivotPoint(osg::Vec3(0, -18.4, -0.4));
+	iss->setCollisionSpace(pSpace);
+	iss->setCollisionBoundingBox(-.9, .9, -4, 1.6, -1, .5);
+	//iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
+	root->addChild(iss->getPAT());
+
+
+	//loader->printGraph();
 	//loader->setRoot("MSG");
 	//root->addChild(loader->getNode());
 	
@@ -359,8 +373,7 @@ void Application::populateScene() {
 	//loaderGloves->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
 	
 
-    //Add full tree to scene
-    viewer.setSceneData(root.get());
+
 
 	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
 	//Camera manipulator
@@ -402,6 +415,12 @@ void Application::populateScene() {
 		root->addChild(loaderRightGlove->getPAT());
 	}
 
+	//Test code
+	loaderLeftGlove->printGraph();
+	
+	//Add full tree to scene
+	viewer.setSceneData(root.get());
+	
 	//Subscribe object
 	//viewer.setCameraManipulator(man);
 	viewer.setCameraManipulator(human);
