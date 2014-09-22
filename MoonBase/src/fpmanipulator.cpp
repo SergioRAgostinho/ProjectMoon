@@ -349,7 +349,8 @@ void FirstPersonManipulator::setTransformation( const osg::Vec3d& eye, const osg
     // set variables
     osg::Matrixd m( osg::Matrixd::lookAt( eye, center, up ) );
     _eye = eye;
-    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+	if (pGeom)
+		dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
     _rotation = m.getRotate().inverse();
 
     //Fix vertical something

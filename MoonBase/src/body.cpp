@@ -226,7 +226,7 @@ Body* Body::clone() {
     return out;
 }
 
-void Body::initCollision(dSpaceID space) {
+void Body::initCollision(dSpaceID space, BodyPhysicsMode mode) {
     pSpace = space;
 	if (!pGeom) {
 		if (gGeode->getDrawableList().size() > 1)
@@ -235,26 +235,60 @@ void Body::initCollision(dSpaceID space) {
 			throw NotImplementedException();
 		}
 
-		GLenum primitive = gGeode->getDrawable(0)->asGeometry()->getPrimitiveSet(0)->getMode();
-		switch (primitive)
+		switch (mode)
 		{
-		case GL_TRIANGLES:
-			triOGS2ODE();
+		case mb::DEFAULT:
+			GLenum primitive = gGeode->getDrawable(0)->asGeometry()->getPrimitiveSet(0)->getMode();
+			switch (primitive)
+			{
+			case GL_TRIANGLES:
+				triOGS2ODE();
+			default:
+				DEBUG_EXCEPTION("NotImplemented - Cannot handle this type of primitive");
+				throw NotImplementedException();
+				break;
+			}
+			break;
+		case mb::BOUNDING_BOX:
+			createBBCollisionGeometry();
+			break;
 		default:
-			DEBUG_EXCEPTION("NotImplemented - Cannot handle this type of primitive");
-			throw NotImplementedException(); 
 			break;
 		}
+		
+	}
+	else
+	{
+		DEBUG_EXCEPTION("Body::initCollision - Object already initialized");
+		throw std::logic_error("Object already initialized");
 	}
 }
 
-void Body::initPhysics(dWorldID world, dSpaceID space) {
+//Create a bounding box shaped collision geometry
+void Body::createBBCollisionGeometry()
+{
+	osg::BoundingBox bbox = gGeode->getBoundingBox();
+	if (pGeom)
+	{
+		//existing geometry already?
+		DEBUG_WARNING("Creating new geometry on top of the old one. Unexpected results may occur.");
+		try {
+			dSpaceRemove(pSpace, pGeom);
+		}
+		catch (std::exception e) {}
+	}
+
+	pGeom = dCreateBox(pSpace, bbox.xMax() - bbox.xMin(), bbox.yMax() - bbox.yMin(), bbox.zMax() - bbox.zMin());
+	dGeomSetPosition(pGeom, (bbox.xMax() + bbox.xMin())*0.5, (bbox.yMax() + bbox.yMin())*0.5, (bbox.zMax() + bbox.zMin())*0.5);
+}
+
+void Body::initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode) {
     initPhysics(world, space, 1);
 }
 
-void Body::initPhysics(dWorldID world, dSpaceID space, double massAmount) {
+void Body::initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode) {
     pWorld = world;
-    initCollision(space);
+    initCollision(space, mode);
 
     dMass mass;
     initMass(&mass, massAmount);

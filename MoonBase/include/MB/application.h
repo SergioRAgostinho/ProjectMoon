@@ -65,6 +65,10 @@ public:
 	osg::ref_ptr<mb::Group> iss;
 	mb::Body *left_glove, *right_glove;
 
+	//to delete
+	mb::Body **bottles;
+	const unsigned int n_bottles;
+
 	//Loaders
 	mb::Loader* loader, *loaderLeftGlove, *loaderRightGlove;
 

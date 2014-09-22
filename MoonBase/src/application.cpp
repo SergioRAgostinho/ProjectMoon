@@ -8,7 +8,8 @@
 
 
 
-Application::Application(int argc, char* argv[])
+Application::Application(int argc, char* argv[]) :
+n_bottles(1)
 {
 	//Parse console arguments if there any modifier
 	modes = APP_MODE_STANDARD;
@@ -27,7 +28,13 @@ Application::Application(int argc, char* argv[])
 	hud = nullptr;
 
 	//scene models
+	root = nullptr;
+	iss = nullptr;
 	left_glove = nullptr;
+	right_glove = nullptr;
+
+	//to delete
+	bottles = nullptr;
 
 	//Manipulators
 	man = nullptr;
@@ -43,6 +50,12 @@ Application::~Application()
 	SafeRelease(loaderRightGlove);
 	SafeRelease(hud);
 	SafeRelease(left_glove);
+	SafeRelease(right_glove);
+	for (size_t i = 0; i < n_bottles; i++)
+	{
+		SafeRelease(bottles[i])
+	}
+	SafeReleaseArray(bottles);
 
 	//FIXME - Cannot kill manipulators because of a shared point given to the osg viewer
 	//SafeRelease(man);
@@ -364,17 +377,26 @@ void Application::populateScene() {
 	iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
 	root->addChild(iss->getPAT());
 
+	//Dump bottles inside the ISS
+	SafeRelease(loader);
+	loader = new mb::Loader("../res/models/muscatel.osgt");
+	bottles = new mb::Body*[n_bottles];
+	for (unsigned int i = 0; i < n_bottles; i++)
+	{
+		if (!i)
+		{
+			bottles[i] = new mb::Body(loader->getNode<osg::Geode>("pCylinder1-GEODE"));
+			bottles[0]->getPAT()->setScale(osg::Vec3(0.025, 0.025, 0.025));
+		}
+		else
+		{
+			bottles[i] = bottles[0]->clone();
+		}
 
-	//loader->printGraph();
-	//loader->setRoot("MSG");
-	//root->addChild(loader->getNode());
-	
-	//osg::ref_ptr<osg::Geode> part = loader->getNode<osg::Geode>("p98"); //<- quads
-	//osg::ref_ptr<osg::Geode> part2 = loader->getNode<osg::Geode>("Node2_f3922"); //<- triangles
-
-	//osg::ref_ptr<osg::Geometry> geo = dynamic_cast<osg::Geometry*>(part2->getDrawable(0));
-	//GLenum type = geo->getPrimitiveSet(0)->getMode();
-	//root->addChild(part.get());
+		bottles[i]->initPhysics(pWorld, pSpace, 2, mb::BOUNDING_BOX);
+		bottles[i]->setPosition(0, 21, 0);
+		root->addChild(bottles[i]->getPAT());
+	}
 
 	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
 	//Camera manipulator
@@ -395,7 +417,7 @@ void Application::populateScene() {
 	
 	loaderLeftGlove = new mb::Loader("../res/models/astronautgloveleft.osgt");
 	loaderLeftGlove->setRoot<osg::MatrixTransform>();
-	loaderLeftGlove->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
+	loaderLeftGlove->getPAT()->setScale(osg::Vec3(0.1, .1, .1));
 	if (human) {
 		root->addChild(human->populateBodyModels(loaderLeftGlove->getPAT(), mb::HumanManipulatorBodyPart::LEFT_HAND));
 	}
@@ -407,7 +429,7 @@ void Application::populateScene() {
 
 	loaderRightGlove = new mb::Loader("../res/models/astronautgloveright.osgt");
 	loaderRightGlove->setRoot<osg::MatrixTransform>();
-	loaderRightGlove->getPAT()->setScale(osg::Vec3(0.05, .05, .05));
+	loaderRightGlove->getPAT()->setScale(osg::Vec3(0.1, .1, .1));
 	if (human) {
 		root->addChild(human->populateBodyModels(loaderRightGlove->getPAT(), mb::HumanManipulatorBodyPart::RIGHT_HAND));
 	}
@@ -421,8 +443,8 @@ void Application::populateScene() {
 	viewer.setSceneData(root.get());
 	
 	//Subscribe object
-	//viewer.setCameraManipulator(man);
-	viewer.setCameraManipulator(human);
+	viewer.setCameraManipulator(man);
+	//viewer.setCameraManipulator(human);
 	viewer.addEventHandler(new mb::KeyboardEventHandler(this));
 }
 

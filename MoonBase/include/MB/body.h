@@ -27,6 +27,11 @@
 
 namespace mb {
     
+	enum BodyPhysicsMode
+	{
+		DEFAULT_BODY, BOUNDING_BOX
+	};
+
     class Body : public Object {
 
         //Converter between OSG and ODE
@@ -36,7 +41,8 @@ namespace mb {
         void initMass(dMass* mass);
         void initMass(dMass* mass, double kg);
 
-
+		//Create a bounding box shaped collision geometry
+		void createBBCollisionGeometry();
 
     protected:
 
@@ -102,11 +108,13 @@ namespace mb {
         bool isPBodyEnabled();
 
         //Initialize only the collision geometry
-        void initCollision(dSpaceID space);
+		void initCollision(dSpaceID space, BodyPhysicsMode mode = DEFAULT_BODY);
+
+		
 
         //Initialize physics
-        void initPhysics(dWorldID world, dSpaceID space);
-        void initPhysics(dWorldID world, dSpaceID space, double massAmount);
+		void initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode = DEFAULT_BODY);
+		void initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode = DEFAULT_BODY);
 
         //return the Geode pointer
         osg::Geode* getGeode();
