@@ -23,6 +23,7 @@
 #include <MB/loader.h>
 #include <MB/hud.h>
 #include <MB/humanmanipulator.h>
+#include <MB/group.h>
 
 #define N_CUBES 1
 #define N_BOTTLES 100
@@ -61,7 +62,8 @@ public:
 
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
-	mb::Body *marsSurface = nullptr;
+	osg::ref_ptr<mb::Group> iss;
+	mb::Body *left_glove, *right_glove;
 
 	//Loaders
 	mb::Loader* loader, *loaderLeftGlove, *loaderRightGlove;

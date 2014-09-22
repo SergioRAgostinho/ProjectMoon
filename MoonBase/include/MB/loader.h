@@ -25,9 +25,9 @@ namespace mb {
 
 		//GetNode returns a pointer to the top node or to one specified by the type and name provided
 		osg::Node* getNode();
-        osg::Node* getNode(const std::string& name);
+        osg::Node* getNode(const std::string& name = "");
         template<class osgNodeType>
-        osgNodeType* getNode(const std::string& name);
+        osgNodeType* getNode(const std::string& name = "");
 
 		template<class osgNodeType>
 		void getNodeList(std::vector<osgNodeType*> out);

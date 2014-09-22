@@ -21,13 +21,26 @@
 
 using namespace mb;
 
-HumanManipulator::HumanManipulator()
+HumanManipulator::HumanManipulator() : 
+front_scale(0.4),
+front_offset(0.1),
+lat_scale(0.4),
+lat_offset(0),
+vert_scale(0.4),
+vert_offset(0)
 {
 	_mode = DEFAULT;
 	sharedInitialization();
 }
 
-HumanManipulator::HumanManipulator(osgViewer::Viewer* v, HumanManipulatorMode mode) {
+HumanManipulator::HumanManipulator(osgViewer::Viewer* v, HumanManipulatorMode mode) :
+front_scale(0.4), 
+front_offset(0.1),
+lat_scale(0.4),
+lat_offset(0),
+vert_scale(0.4),
+vert_offset(0)
+{
 	
 	viewer = v;
 	_mode = mode;
@@ -44,12 +57,12 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 	//Start Kinect sensor and object
 	HRESULT hr = kinect.Initialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON);
 	if (FAILED(hr))
-		std::cerr << "Sensor was not properly initialized" << std::endl;
+		DEBUG_ERROR("Sensor was not properly initialized");
 
 	//Activate seated mode, which is deactivated by default
 	hr = kinect.ToggleSeatedMode();
 	if (SUCCEEDED(hr))
-		std::clog << "Activated seated mode" << std::endl;
+		DEBUG_LOG("Activated seated mode");
 
 
 	//Check if we really need to create the second viewer otherwise exit
@@ -69,6 +82,11 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 	r_hand_in_cam = osg::Vec3(0.06, -0.1, -0.4);
 	l_hand_quat_in_cam = osg::Quat();
 	r_hand_quat_in_cam = osg::Quat();
+
+	//Initializing the hands sensitivty parameters
+	//front_scale = 0.8;
+	//front_offset = 0;
+
 }
 
 
@@ -172,12 +190,14 @@ void HumanManipulator::processSkeleton() {
 				_movement.set(centre.x, centre.y, centre.z);
 
 				Vector4 l_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT];
-				l_hand_in_cam.set(0.1*(l_hand_coords.x - centre.x), 0.1*(l_hand_coords.y - centre.y),
-					0.8*(l_hand_coords.z - centre.z));
+				l_hand_in_cam.set(lat_scale*(l_hand_coords.x - centre.x) - lat_offset, 
+					vert_scale*(l_hand_coords.y - centre.y) + vert_offset,
+					front_scale*(l_hand_coords.z - centre.z) - front_offset);
 
 				Vector4 r_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT];
-				r_hand_in_cam.set(0.1*(r_hand_coords.x - centre.x), 0.1*(r_hand_coords.y - centre.y),
-					0.8*(r_hand_coords.z - centre.z));
+				r_hand_in_cam.set(lat_scale*(r_hand_coords.x - centre.x) + lat_offset, 
+					vert_scale*(r_hand_coords.y - centre.y) + vert_offset,
+					front_scale*(r_hand_coords.z - centre.z) - front_offset);
 
 				//Attitude updates
 				NUI_SKELETON_BONE_ORIENTATION boneOrientations[NUI_SKELETON_POSITION_COUNT];
@@ -275,6 +295,12 @@ void HumanManipulator::updateBoneDraw(Vector4 skeletonPoint_1, Vector4 skeletonP
 	s_geode->getDrawable(idx)->dirtyDisplayList();
 }
 
+//Provide reference to geom object
+dGeomID HumanManipulator::getGeomID()
+{
+	return pGeom;
+}
+
 //Populate the scene with the models derived 
 osg::PositionAttitudeTransform* HumanManipulator::populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart) {
 
@@ -296,6 +322,42 @@ osg::PositionAttitudeTransform* HumanManipulator::populateBodyModels(osg::Node *
 		return nullptr;
 		break;
 	}
+
+}
+
+//Init collision functionalities
+void HumanManipulator::initCollision(dSpaceID s) {
+	initCollision(s, 20);
+}
+void HumanManipulator::initCollision(dSpaceID s, float colRadius) {
+	pSpace = s;
+	pGeom = dCreateSphere(pSpace, (dReal)colRadius);
+	dGeomSetPosition(pGeom, (dReal)_eye.x(), (dReal)_eye.y(), (dReal)_eye.z());
+}
+
+//Check the status on the revert flag
+void HumanManipulator::armRevert(double x, double y, double z) {
+	_revertEye += osg::Vec3(x, y, z);
+	revert = true;
+}
+
+//Process an armed revert
+void HumanManipulator::processRevert() {
+	if (!revert) {
+		return;
+	}
+
+	_eye += _revertEye;
+	dGeomSetPosition(pGeom, (dReal)_eye.x(), (dReal)_eye.y(), (dReal)_eye.z());
+	//Update hands position
+	if (l_hand) {
+		l_hand->setPosition(_eye + _rotation * l_hand_in_cam);
+	}
+	if (r_hand) {
+		r_hand->setPosition(_eye + _rotation * r_hand_in_cam);
+	}
+	_revertEye.set(0, 0, 0);
+	revert = false;
 
 }
 
@@ -393,6 +455,10 @@ bool HumanManipulator::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAction
 	case osgGA::GUIEventAdapter::FRAME:
 		
 		_eye = _rotation * _movement;
+		if (pGeom)
+		{
+			dGeomSetPosition(pGeom, (dReal)_eye.x(), (dReal)_eye.y(), (dReal)_eye.z());
+		}
 
 		//Update hands position
 
