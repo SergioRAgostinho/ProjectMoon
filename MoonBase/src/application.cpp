@@ -105,6 +105,16 @@ void Application::parseConsoleArgument(int argc, char* argv[]) {
 			modes |= APP_MODE_STEREO;
 			DEBUG_LOG("Stereo mode set up");
 		}
+		else if (!option.compare("-mouse"))
+		{
+			modes |= APP_MODE_MOUSE;
+			DEBUG_LOG("Mouse mode set up");
+			if (modes & APP_MODE_DEBUG)
+			{
+				modes &= ~APP_MODE_DEBUG;
+				DEBUG_WARNING("Disabling Kinect debug window");
+			}
+		}
 		else
 		{
 			invalid_argument = true;
@@ -143,9 +153,16 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	if (b1 && b2 && dAreConnected(b1, b2))
 		return;
 
-	mb::FirstPersonManipulator *cam = app->man;
-	//mb::HumanManipulator *cam = app->human;
-	dGeomID camID = cam->getGeomID();
+	dGeomID camID;
+
+	if (app->modes & APP_MODE_MOUSE)
+	{
+		camID = app->man->getGeomID();
+	}
+	else
+	{
+		camID = app->human->getGeomID();
+	}
 
 	//We need to exit here if the objects are both static and not cameras
 	//if ((!b1 && !b2) && !(o1 == camID || o2 == camID))
@@ -169,6 +186,8 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 			static unsigned long nr = 0;
 			int class1 = dGeomGetClass(o1);
 			int class2 = dGeomGetClass(o2);
+			int isSpace1 = dGeomIsSpace(o1);
+			int isSpace2 = dGeomIsSpace(o2);
 			DEBUG_LOG("crashing against something " << nr++);
 
 			//both static objects
@@ -187,18 +206,23 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 
                 int sign;
                 (camID == contact[iMaxDepth].geom.g2)? sign = -1 : sign = 1;
-                cam->armRevert((double) sign * depth * contact[iMaxDepth].geom.normal[0],
-                               (double) sign * depth * contact[iMaxDepth].geom.normal[1],
-                               (double) sign * depth * contact[iMaxDepth].geom.normal[2]);
+				depth *= 1.1;
+				if (app->modes & APP_MODE_MOUSE)
+				{
+					app->man->armRevert((double)sign * depth * contact[iMaxDepth].geom.normal[0],
+						(double)sign * depth * contact[iMaxDepth].geom.normal[1],
+						(double)sign * depth * contact[iMaxDepth].geom.normal[2]);
+				}
+				else
+				{
+					app->human->armRevert((double)sign * depth * contact[iMaxDepth].geom.normal[0],
+						(double)sign * depth * contact[iMaxDepth].geom.normal[1],
+						(double)sign * depth * contact[iMaxDepth].geom.normal[2]);
+				}
 
                 return;
             }
 
-			
-
-
-            //FIXME: Remove when trying collision between static, grabbed object and camera
-            return;
         }
 
 #if 0
@@ -289,7 +313,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 void Application::setPhysics() {
 	// recreate world
 	pWorld = dWorldCreate();
-	dWorldSetGravity(pWorld, 0, -0.01, 0);
+	dWorldSetGravity(pWorld, 0, 0, 0);
 	dWorldSetCFM(pWorld, 1e-10);
 	dWorldSetERP(pWorld, 0.8);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
@@ -313,7 +337,8 @@ void Application::renderLoop() {
 
 
     //needs to be invoked here!
-	man->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
+	if (modes & APP_MODE_MOUSE)
+		man->setByMatrix(osg::Matrix::rotate(M_PI_2, 1, 0, 0));
 
 
 
@@ -322,7 +347,7 @@ void Application::renderLoop() {
 	while (!viewer.done())
 	{
         //hide cursor for each frame (if you go out of the software the cursor will stay visible if you get back to the software)
-        //hideCursor();
+        hideCursor();
 
         viewer.advance();
         viewer.eventTraversal();
@@ -333,12 +358,19 @@ void Application::renderLoop() {
 		dJointGroupEmpty(pCollisionJG);
 
         //Revert the camera movement if needed
-        man->processRevert();
-        mb::Body* grabbedBody = man->getGrabbedBody();
-        if (grabbedBody && man->getGrabbedComplete())
-            grabbedBody->processRevert();
+		if (modes & APP_MODE_MOUSE)
+		{
+			man->processRevert();
+			//mb::Body* grabbedBody = man->getGrabbedBody();
+			//if (grabbedBody && man->getGrabbedComplete())
+			//	grabbedBody->processRevert();
+		}
+		else
+		{
+			human->processRevert();
+		}
+        
 
-		human->processRevert();
 
 		//Update our objects
 		for (size_t i = 0; i < n_bottles; i++)
@@ -362,13 +394,6 @@ void Application::populateScene() {
 
 	//Add HUD
 	root->addChild(hud->init());
-
-	////Load the ISS (working)
-	//loader = new mb::Loader("../res/models/iss_int5.ive");
-	//loader->setRoot<osg::MatrixTransform>();
-	//loader->getPAT()->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
-	//loader->getPAT()->setPosition(osg::Vec3(0, -17.7, 0.4));
-	//root->addChild(loader->getPAT());
 
 	//Load the ISS (tests)
 	loader = new mb::Loader("../res/models/iss_int5.ive");
@@ -403,20 +428,23 @@ void Application::populateScene() {
 
 	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
 	//Camera manipulator
-	man = new mb::FirstPersonManipulator(camera.get());
-	man->initCollision(pSpace, 0.1f);
-
-	//The new human camera manipulator
-	if (modes & APP_MODE_DEBUG)
+	if (modes & APP_MODE_MOUSE)
 	{
+		man = new mb::FirstPersonManipulator(camera.get());
+		man->initCollision(pSpace, 0.1f);
+	}
+	else if (modes & APP_MODE_DEBUG)
+	{
+		//The new human camera manipulator
 		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEBUG_WINDOW);
+		human->initCollision(pSpace, 0.1f);
 	}
 	else
 	{
+		//The new human camera manipulator
 		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEFAULT);
-
+		human->initCollision(pSpace, 0.1f);
 	}
-	//human->initCollision(pSpace, 0.1f);
 	
 	loaderLeftGlove = new mb::Loader("../res/models/astronautgloveleft.osgt");
 	loaderLeftGlove->setRoot<osg::MatrixTransform>();
@@ -446,8 +474,14 @@ void Application::populateScene() {
 	viewer.setSceneData(root.get());
 	
 	//Subscribe object
-	viewer.setCameraManipulator(man);
-	//viewer.setCameraManipulator(human);
+	if (modes & APP_MODE_MOUSE)
+	{
+		viewer.setCameraManipulator(man);
+	}
+	else
+	{
+		viewer.setCameraManipulator(human);
+	}
 	viewer.addEventHandler(new mb::KeyboardEventHandler(this));
 }
 
