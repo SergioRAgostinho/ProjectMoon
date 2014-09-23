@@ -42,9 +42,7 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
 					if (body) {
 						osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1), mb::uniRand(-1, 1), mb::uniRand(-1, 1));
 						axis.normalize();
-						osg::Matrix rot = osg::Matrix::rotate(mb::uniRand(-M_PI, M_PI), axis);
-						osg::Quat q = rot.getRotate();
-						body->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+						body->setAttitude(osg::Quat(mb::uniRand(-M_PI, M_PI), axis));
 					}
                     break;
                 }

@@ -16,6 +16,7 @@
 #include <osgViewer/Viewer>
 #include <osgGA/StandardManipulator>
 #include <Kinect/sensor.h>
+#include <MB/body.h>
 
 
 //Kinect image specs
@@ -55,6 +56,7 @@ namespace mb {
 		Kinect::Sensor kinect;
 
 		//Collision related
+		//body
 		dSpaceID pSpace;
 		dGeomID pGeom;
 		bool revert;
@@ -69,7 +71,8 @@ namespace mb {
 		osg::Vec2Array* vertex_ptr[JOINTS];
 
 		//Body members (pun intended)
-		osg::ref_ptr<osg::PositionAttitudeTransform> l_hand, r_hand;
+		//osg::ref_ptr<osg::PositionAttitudeTransform> l_hand, r_hand;
+		osg::ref_ptr<mb::Body> l_hand, r_hand;
 		osg::Vec3 l_hand_in_cam, r_hand_in_cam;
 		osg::Quat l_hand_quat_in_cam, r_hand_quat_in_cam;
 
@@ -107,8 +110,6 @@ namespace mb {
 		void updateSkeletonDraw();
 		void updateBoneDraw(Vector4 skeletonPoint_1, Vector4 skeletonPoint_2, short unsigned int idx);
 
-
-		
 	public:
 
 		HumanManipulator();
@@ -118,13 +119,18 @@ namespace mb {
 
 		//Provide reference to geom object
 		dGeomID getGeomID();
+		dGeomID getLeftHandGeomID();
+		dGeomID getRightHandGeomID();
+		void getHandsGeomIDs(dGeomID *l, dGeomID *r);
 
 		//Populate the scene with the models derived 
-		osg::PositionAttitudeTransform* populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart);
+		//osg::PositionAttitudeTransform* populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart);
+		osg::PositionAttitudeTransform* populateBodyModels(Body *body, HumanManipulatorBodyPart bodyPart);
 
 		//Init collision functionalities
 		void initCollision(dSpaceID s);
 		void initCollision(dSpaceID s, float colRadius);
+		void initHandCollision(HumanManipulatorBodyPart hand);
 
 		//Check the status on the revert flage
 		void armRevert(double x, double y, double z);

@@ -5,11 +5,11 @@
 #include <MB/keyboardeventhandler.h>
 #include <MB/utils.hpp>
 #include <MB/fpmanipulator.h>
-
+#include <MB/findnodevisitor.h>
 
 
 Application::Application(int argc, char* argv[]) :
-n_bottles(1)
+n_bottles(20)
 {
 	//Parse console arguments if there any modifier
 	modes = APP_MODE_STANDARD;
@@ -21,8 +21,6 @@ n_bottles(1)
 
 	//model loader component
 	loader = nullptr;
-	loaderLeftGlove = nullptr;
-	loaderRightGlove = nullptr;
 
 	//heads up display component
 	hud = nullptr;
@@ -45,16 +43,7 @@ n_bottles(1)
 Application::~Application()
 {
 	//FIXME
-	SafeRelease(loader);
-	SafeRelease(loaderLeftGlove);
-	SafeRelease(loaderRightGlove);
 	SafeRelease(hud);
-	SafeRelease(left_glove);
-	SafeRelease(right_glove);
-	for (size_t i = 0; i < n_bottles; i++)
-	{
-		SafeRelease(bottles[i])
-	}
 	SafeReleaseArray(bottles);
 
 	//FIXME - Cannot kill manipulators because of a shared point given to the osg viewer
@@ -154,6 +143,8 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 		return;
 
 	dGeomID camID;
+	dGeomID l_hand = nullptr;
+	dGeomID r_hand = nullptr;
 
 	if (app->modes & APP_MODE_MOUSE)
 	{
@@ -162,11 +153,15 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	else
 	{
 		camID = app->human->getGeomID();
+		app->human->getHandsGeomIDs(&l_hand, &r_hand);
 	}
 
-	//We need to exit here if the objects are both static and not cameras
-	//if ((!b1 && !b2) && !(o1 == camID || o2 == camID))
-	if (!(b1 || b2 || o1 == camID || o2 == camID))
+	//Quick flags 
+	const bool f_camera = (o1 == camID || o2 == camID);
+	const bool f_hands = (o1 == l_hand || o2 == l_hand || o1 == r_hand || o2 == r_hand);
+
+	//We need to exit here if the objects are both static and not cameras or hands
+	if (!(b1 || b2 || f_camera || f_hands))
 	{
 		//Both geometries are static and none is a camera
 		return;
@@ -181,7 +176,13 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
         /////////////////////////////
 
 
-        if (o1 == camID || o2 == camID) {
+        if (f_camera) {
+			//Ignore collision between hands and camera
+			if (f_hands)
+			{
+				return;
+			}
+
 			//Debug Code
 			static unsigned long nr = 0;
 			int class1 = dGeomGetClass(o1);
@@ -223,7 +224,12 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
                 return;
             }
 
-        }
+		} 
+		else if ((o1 == l_hand && o2 == r_hand ) || (o1 == r_hand && o2 == l_hand))
+		{
+			// Ignore collision between both hands
+			return;
+		}
 
 #if 0
         //////////////////////////////
@@ -293,7 +299,9 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
         }
 #endif
 
-        /////////////////////////
+		
+
+		/////////////////////////
         /// Remaining stuff
         /////////////////////////
 
@@ -405,24 +413,29 @@ void Application::populateScene() {
 	iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
 	root->addChild(iss->getPAT());
 
+	//Disable astro man
+	loader->getNode<osg::Group>("o1")->getParent(0)->setNodeMask(0x00);
+
 	//Dump bottles inside the ISS
-	SafeRelease(loader);
 	loader = new mb::Loader("../res/models/muscatel.osgt");
-	bottles = new mb::Body*[n_bottles];
+	bottles = new osg::ref_ptr<mb::Body>[n_bottles];
 	for (unsigned int i = 0; i < n_bottles; i++)
 	{
 		if (!i)
 		{
-			bottles[i] = new mb::Body(loader->getNode<osg::Geode>("pCylinder1-GEODE"));
+			bottles[0] = new mb::Body(loader->getNode<osg::Geode>("pCylinder1-GEODE"));
 			bottles[0]->getPAT()->setScale(osg::Vec3(0.025, 0.025, 0.025));
+			bottles[0]->initPhysics(pWorld, pSpace, 2, mb::BOUNDING_BOX);
 		}
 		else
 		{
 			bottles[i] = bottles[0]->clone();
 		}
 
-		bottles[i]->initPhysics(pWorld, pSpace, 2, mb::BOUNDING_BOX);
-		bottles[i]->setPosition(0, 2, 0);
+		//Random position
+		bottles[i]->setPosition(mb::uniRand(-0.9, 0.9), mb::uniRand(-2.6, 3.65), mb::uniRand(-1.3, .5));
+		//random linear velocity
+		bottles[i]->setLinearVelocity(mb::uniRand(-1, 1), mb::uniRand(-1, 1), mb::uniRand(-1, 1));
 		root->addChild(bottles[i]->getPAT());
 	}
 
@@ -446,28 +459,35 @@ void Application::populateScene() {
 		human->initCollision(pSpace, 0.1f);
 	}
 	
-	loaderLeftGlove = new mb::Loader("../res/models/astronautgloveleft.osgt");
-	loaderLeftGlove->setRoot<osg::MatrixTransform>();
-	loaderLeftGlove->getPAT()->setScale(osg::Vec3(0.1, .1, .1));
+	loader = new mb::Loader("../res/models/astronautgloveleft.osgt");
+	mb::FindNodeVisitor<osg::Geode> nv;
+	loader->getNode()->accept(nv);
+	left_glove = new mb::Body(nv.getFirst());
+	left_glove->setScale(osg::Vec3(.01, .01, .01));
+	left_glove->initCollision(pSpace, mb::BOUNDING_BOX);
 	if (human) {
-		root->addChild(human->populateBodyModels(loaderLeftGlove->getPAT(), mb::HumanManipulatorBodyPart::LEFT_HAND));
+		root->addChild(human->populateBodyModels(left_glove.get(), mb::HumanManipulatorBodyPart::LEFT_HAND));
 	}
 	else
 	{
-		loaderLeftGlove->getPAT()->setPosition(osg::Vec3(-0.06, 0.4, -0.1));
-		root->addChild(loaderLeftGlove->getPAT());
+		loader->getPAT()->setPosition(osg::Vec3(-0.06, 0.4, -0.1));
+		root->addChild(loader->getPAT());
 	}
 
-	loaderRightGlove = new mb::Loader("../res/models/astronautgloveright.osgt");
-	loaderRightGlove->setRoot<osg::MatrixTransform>();
-	loaderRightGlove->getPAT()->setScale(osg::Vec3(0.1, .1, .1));
+
+	loader = new mb::Loader("../res/models/astronautgloveright.osgt");
+	nv = mb::FindNodeVisitor<osg::Geode>();
+	loader->getNode()->accept(nv);
+	right_glove = new mb::Body(nv.getFirst());
+	right_glove->setScale(osg::Vec3(.01, .01, .01));
+	right_glove->initCollision(pSpace, mb::BOUNDING_BOX);
 	if (human) {
-		root->addChild(human->populateBodyModels(loaderRightGlove->getPAT(), mb::HumanManipulatorBodyPart::RIGHT_HAND));
+		root->addChild(human->populateBodyModels(right_glove.get(), mb::HumanManipulatorBodyPart::RIGHT_HAND));
 	}
 	else
 	{
-		loaderRightGlove->getPAT()->setPosition(osg::Vec3(0.06, 0.4, -0.1));
-		root->addChild(loaderRightGlove->getPAT());
+		right_glove->setPosition(osg::Vec3(0.06, 0.4, -0.1));
+		root->addChild(right_glove->getPAT());
 	}
 
 	//Add full tree to scene

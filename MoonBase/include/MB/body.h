@@ -32,7 +32,7 @@ namespace mb {
 		DEFAULT_BODY, BOUNDING_BOX
 	};
 
-    class Body : public Object {
+    class Body : public Object, public osg::Referenced {
 
         //Converter between OSG and ODE
         bool triOGS2ODE();
@@ -69,6 +69,9 @@ namespace mb {
         bool revert;
         osg::Vec3d revertPos;
 
+		//Deconstructor afterparty
+		~Body();
+
     public:
 
         //Constructor party
@@ -76,8 +79,7 @@ namespace mb {
         Body(osg::Geode* geode);
         Body(dWorldID w, dSpaceID s);
 
-        //Deconstructor afterparty
-        ~Body();
+        
 
         //Align the current body with the provided one
         osg::Quat align(Body* ref);
@@ -161,14 +163,23 @@ namespace mb {
         //Set linear acceleration
         void setLinearAcceleration(double x, double y, double z);
 
-        //Set Orientation
-        void setOrientationQuat(double x, double y, double z, double w);
-
-        //Set Orientation Mat
-        void setOrientationMat(osg::Matrix mat);
+		//Set attitude for both graphical and physical entities
+		void setAttitude(osg::Quat quat);
+		void setAttitude(dQuaternion quat);
+		void setAttitude(double x, double y, double z, double w);
+		void setAttitude(osg::Matrix mat);
+		//additional definition to go around the overload constraint
+		void setAttitudeMatrixODE(dMatrix3 mat);
 
         //Set the object position
         void setPosition(double x, double y, double z);
+		void setPosition(osg::Vec3 p);
+		void setPosition(dVector3 p);
+
+		//Set the body transformation scale
+		void setScale(double x, double y, double z);
+		void setScale(osg::Vec3 scale);
+		void setScale(dVector3 scale);
 
         //Adjust object mass
         void setTotalMass(double amount);

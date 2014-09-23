@@ -14,10 +14,13 @@
 #include <MB/findnodevisitor.h>
 #include <MB/printnodevisitor.h>
 
+
 namespace mb {
 
 
-    class Loader : public Object {
+    class Loader : public Object , public osg::Referenced {
+
+		~Loader();
 
     public:
 
@@ -25,7 +28,7 @@ namespace mb {
 
 		//GetNode returns a pointer to the top node or to one specified by the type and name provided
 		osg::Node* getNode();
-        osg::Node* getNode(const std::string& name = "");
+        osg::Node* getNode(const std::string& name);
         template<class osgNodeType>
         osgNodeType* getNode(const std::string& name = "");
 

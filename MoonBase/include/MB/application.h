@@ -64,14 +64,14 @@ public:
 	//Scene population
 	osg::ref_ptr<osg::Group> root;
 	osg::ref_ptr<mb::Group> iss;
-	mb::Body *left_glove, *right_glove;
+	osg::ref_ptr<mb::Body> left_glove, right_glove;
 
 	//to delete
-	mb::Body **bottles;
+	osg::ref_ptr<mb::Body> *bottles;
 	const unsigned int n_bottles;
 
 	//Loaders
-	mb::Loader* loader, *loaderLeftGlove, *loaderRightGlove;
+	osg::ref_ptr<mb::Loader> loader;
 
     //HUD
     mb::Hud* hud;

@@ -300,21 +300,21 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
                 q = q_final = q_init = osg::Quat();
             } else if (dist > 48 && dist <= 50) {
                 q.slerp(0, q_init, q_final);
-                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+                grabbedBody->setAttitude(q);
             } else if (dist > 46 && dist <= 48) {
                 q.slerp(0.2, q_init, q_final);
-                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+				grabbedBody->setAttitude(q);
             } else if (dist > 44 && dist <= 46) {
                 q.slerp(0.4, q_init, q_final);
-                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+				grabbedBody->setAttitude(q);
             } else if (dist > 42 && dist <= 44) {
                 q.slerp(0.6, q_init, q_final);
-                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+				grabbedBody->setAttitude(q);
             } else if (dist > 40 && dist <= 42) {
                 q.slerp(0.8, q_init, q_final);
-                grabbedBody->setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+				grabbedBody->setAttitude(q);
             } else {
-                grabbedBody->setOrientationQuat(q_final.x(), q_final.y(), q_final.z(), q_final.w());
+                grabbedBody->setAttitude(q);
             }
 
 
@@ -563,9 +563,8 @@ void FirstPersonManipulator::updateGrabbed() {
     grabbedBody->setAngularVelocity(0, 0, 0);
 
     if(!align) {
-        static osg::Quat corr = osg::Matrix::rotate(M_PI/2.0, 1, 0, 0).getRotate();
-        osg::Quat q1 = _rotationGrab * corr * _rotation ;
-        grabbedBody->setOrientationQuat(q1.x(), q1.y(), q1.z(), q1.w());
+		static osg::Quat corr = osg::Quat(M_PI / 2.0, osg::Vec3(1, 0, 0));
+		grabbedBody->setAttitude(_rotationGrab * corr * _rotation);
     }
 }
 

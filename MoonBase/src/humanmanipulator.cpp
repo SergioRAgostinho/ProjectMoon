@@ -5,6 +5,7 @@
 
 #include <MB/humanmanipulator.h>
 #include <MB/utils.hpp>
+#include <MB/findnodevisitor.h>
 #include <osg/Texture2D>
 #include <osg/MatrixTransform>
 #include <osg/LineWidth>
@@ -22,7 +23,7 @@
 using namespace mb;
 
 HumanManipulator::HumanManipulator() : 
-front_scale(0.4),
+front_scale(0.8),
 front_offset(0.1),
 lat_scale(0.4),
 lat_offset(0),
@@ -34,7 +35,7 @@ vert_offset(0)
 }
 
 HumanManipulator::HumanManipulator(osgViewer::Viewer* v, HumanManipulatorMode mode) :
-front_scale(0.4), 
+front_scale(0.8), 
 front_offset(0.1),
 lat_scale(0.4),
 lat_offset(0),
@@ -176,9 +177,9 @@ void HumanManipulator::processSkeleton() {
 				if (_mode == DEBUG_WINDOW)
 					s_geode->setNodeMask(0xff);
 				if (l_hand)
-					l_hand->setNodeMask(0xff);
+					l_hand->getPAT()->setNodeMask(0xff);
 				if (r_hand)
-					r_hand->setNodeMask(0xff);
+					r_hand->getPAT()->setNodeMask(0xff);
 			}
 
 			//The original skeleton is being tracked
@@ -221,9 +222,9 @@ void HumanManipulator::processSkeleton() {
 		if (_mode == DEBUG_WINDOW)
 			s_geode->setNodeMask(0x00);
 		if (l_hand)
-			l_hand->setNodeMask(0x00);
+			l_hand->getPAT()->setNodeMask(0x00);
 		if (r_hand)
-			r_hand->setNodeMask(0x00);
+			r_hand->getPAT()->setNodeMask(0x00);
 	}
 }
 
@@ -301,28 +302,69 @@ dGeomID HumanManipulator::getGeomID()
 	return pGeom;
 }
 
-//Populate the scene with the models derived 
-osg::PositionAttitudeTransform* HumanManipulator::populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart) {
+dGeomID HumanManipulator::getLeftHandGeomID()
+{
+	if (l_hand)
+	{
+		return l_hand->getGeomID();
+	}
+	return nullptr;
+}
 
+dGeomID HumanManipulator::getRightHandGeomID()
+{
+	if (r_hand)
+	{
+		return r_hand->getGeomID();
+	}
+	return nullptr;
+}
+
+void HumanManipulator::getHandsGeomIDs(dGeomID *l, dGeomID *r)
+{
+	*l = l_hand ? l_hand->getGeomID() : nullptr;
+	*r = r_hand ? r_hand->getGeomID() : nullptr;
+}
+
+//Populate the scene with the models derived 
+//osg::PositionAttitudeTransform* HumanManipulator::populateBodyModels(osg::Node *model, HumanManipulatorBodyPart bodyPart) {
+//
+//	switch (bodyPart)
+//	{
+//	case mb::LEFT_HAND:
+//		l_hand = new osg::PositionAttitudeTransform;
+//		l_hand->addChild(model);
+//		l_hand->setPosition(_eye + _rotation * l_hand_in_cam);
+//		return l_hand.get();
+//		break;
+//	case mb::RIGHT_HAND:
+//		r_hand = new osg::PositionAttitudeTransform;
+//		r_hand->addChild(model);
+//		r_hand->setPosition(_eye + _rotation * r_hand_in_cam);
+//		return r_hand.get();
+//		break;
+//	default:
+//		return nullptr;
+//		break;
+//	}
+//
+//}
+osg::PositionAttitudeTransform* HumanManipulator::populateBodyModels(Body *body, HumanManipulatorBodyPart bodyPart) {
 	switch (bodyPart)
 	{
 	case mb::LEFT_HAND:
-		l_hand = new osg::PositionAttitudeTransform;
-		l_hand->addChild(model);
+		l_hand = body;
 		l_hand->setPosition(_eye + _rotation * l_hand_in_cam);
-		return l_hand.get();
 		break;
 	case mb::RIGHT_HAND:
-		r_hand = new osg::PositionAttitudeTransform;
-		r_hand->addChild(model);
+		r_hand = body;
 		r_hand->setPosition(_eye + _rotation * r_hand_in_cam);
-		return r_hand.get();
 		break;
 	default:
-		return nullptr;
 		break;
 	}
 
+	return body->getPAT();
 }
 
 //Init collision functionalities
@@ -334,6 +376,17 @@ void HumanManipulator::initCollision(dSpaceID s, float colRadius) {
 	pGeom = dCreateSphere(pSpace, (dReal)colRadius);
 	dGeomSetPosition(pGeom, (dReal)_eye.x(), (dReal)_eye.y(), (dReal)_eye.z());
 }
+
+//void HumanManipulator::initHandCollision(HumanManipulatorBodyPart hand) {
+//
+//	if (!pSpace)
+//	{
+//		DEBUG_EXCEPTION("HumanManipulator::initHandCollision - Initialize a collision space first");
+//		throw std::logic_error("Initialize a collision space first");
+//	}
+//
+//	createBBCollisionGeometry(hand);
+//}
 
 //Check the status on the revert flag
 void HumanManipulator::armRevert(double x, double y, double z) {

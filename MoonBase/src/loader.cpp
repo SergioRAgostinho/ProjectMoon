@@ -42,3 +42,7 @@ bool Loader::setRoot(const std::string& name) {
 void Loader::printGraph() {
 	printGraph<osg::Node>();
 }
+
+Loader::~Loader()
+{
+}

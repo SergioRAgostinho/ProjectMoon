@@ -229,16 +229,17 @@ Body* Body::clone() {
 void Body::initCollision(dSpaceID space, BodyPhysicsMode mode) {
     pSpace = space;
 	if (!pGeom) {
-		if (gGeode->getDrawableList().size() > 1)
-		{
-			DEBUG_EXCEPTION("NotImplemented - Can only handle one drawable");
-			throw NotImplementedException();
-		}
-
+		
 		switch (mode)
 		{
 		case mb::DEFAULT_BODY:
 		{
+			if (gGeode->getDrawableList().size() > 1)
+			{
+				DEBUG_EXCEPTION("NotImplemented - Can only handle one drawable");
+				throw NotImplementedException();
+			}
+
 			GLenum primitive = gGeode->getDrawable(0)->asGeometry()->getPrimitiveSet(0)->getMode();
 			switch (primitive)
 			{
@@ -423,7 +424,28 @@ void Body::setLinearAcceleration(double x, double y, double z) {
         dBodySetForce(pBody, (dReal)x, (dReal)y, (dReal)z);
 }
 
-void Body::setOrientationQuat(double x, double y, double z, double w) {
+
+//Set attitude for both graphical and physical entities
+void Body::setAttitude(osg::Quat quat)
+{
+	gPAT->setAttitude(quat);
+	if (pGeom) {
+		dQuaternion q = { (dReal)quat.w(), (dReal)quat.x(), (dReal)quat.y(), (dReal)quat.z() };
+		dGeomSetQuaternion(pGeom, q);
+	}
+}
+
+//Set attitude for both graphical and physical entities
+void Body::setAttitude(dQuaternion quat)
+{
+	gPAT->setAttitude(osg::Quat(quat[1], quat[2], quat[3], quat[0]));
+	if (pGeom) {
+		dGeomSetQuaternion(pGeom, quat);
+	}
+}
+
+//Set attitude for both graphical and physical entities
+void Body::setAttitude(double x, double y, double z, double w) {
 	gPAT->setAttitude(osg::Quat(x, y, z, w));
     if (pGeom) {
         dQuaternion q = { (dReal) w, (dReal) x, (dReal) y, (dReal) z };
@@ -431,16 +453,68 @@ void Body::setOrientationQuat(double x, double y, double z, double w) {
     }
 }
 
-//Set Orientation Mat
-void Body::setOrientationMat(osg::Matrix mat) {
-    osg::Quat q = mat.getRotate();
-    setOrientationQuat(q.x(), q.y(), q.z(), q.w());
+//Set attitude for both graphical and physical entities
+void Body::setAttitude(osg::Matrix mat) {
+	setAttitude(mat.getRotate());
 }
 
+//Set attitude for both graphical and physical entities
+void Body::setAttitudeMatrixODE(dMatrix3 mat) {
+	DEBUG_WARNING("setAttitudeMatrixODE has not been tested yet");
+	gPAT->setAttitude(osg::Matrix(mat[0], mat[1], mat[2], 0,
+		mat[4], mat[5], mat[6], 0,
+		mat[7], mat[8], mat[9], 0,
+		0, 0, 0, 0).getRotate());
+	
+	if (pGeom)
+	{
+		dGeomSetRotation(pGeom, mat);
+	}
+}
+
+//Set the object position
 void Body::setPosition(double x, double y, double z) {
 	gPAT->setPosition(osg::Vec3(x, y, z));
     if(pGeom)
         dGeomSetPosition(pGeom, (dReal) x, (dReal) y, (dReal) z);
+}
+
+//Set the object position
+void Body::setPosition(osg::Vec3 p)
+{
+	gPAT->setPosition(p);
+	if (pGeom)
+	{
+		dGeomSetPosition(pGeom, p.x(), p.y(), p.z());
+	}
+}
+
+//Set the object position
+void Body::setPosition(dVector3 p)
+{
+	gPAT->setPosition(osg::Vec3(p[0], p[1], p[2]));
+	if (pGeom)
+	{
+		dGeomSetPosition(pGeom, p[0], p[1], p[2]);
+	}
+}
+
+//Set the body transformation scale
+void Body::setScale(double x, double y, double z)
+{
+	gPAT->setScale(osg::Vec3(x, y, z));
+}
+
+//Set the body transformation scale
+void Body::setScale(osg::Vec3 scale)
+{
+	gPAT->setScale(scale);
+}
+
+//Set the body transformation scale
+void Body::setScale(dVector3 scale)
+{
+	gPAT->setScale(osg::Vec3(scale[0], scale[1], scale[2]));
 }
 
 void Body::update() {
