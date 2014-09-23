@@ -237,7 +237,8 @@ void Body::initCollision(dSpaceID space, BodyPhysicsMode mode) {
 
 		switch (mode)
 		{
-		case mb::DEFAULT:
+		case mb::DEFAULT_BODY:
+		{
 			GLenum primitive = gGeode->getDrawable(0)->asGeometry()->getPrimitiveSet(0)->getMode();
 			switch (primitive)
 			{
@@ -248,6 +249,7 @@ void Body::initCollision(dSpaceID space, BodyPhysicsMode mode) {
 				throw NotImplementedException();
 				break;
 			}
+		}
 			break;
 		case mb::BOUNDING_BOX:
 			createBBCollisionGeometry();
@@ -278,8 +280,9 @@ void Body::createBBCollisionGeometry()
 		catch (std::exception e) {}
 	}
 
-	pGeom = dCreateBox(pSpace, bbox.xMax() - bbox.xMin(), bbox.yMax() - bbox.yMin(), bbox.zMax() - bbox.zMin());
-	dGeomSetPosition(pGeom, (bbox.xMax() + bbox.xMin())*0.5, (bbox.yMax() + bbox.yMin())*0.5, (bbox.zMax() + bbox.zMin())*0.5);
+	const osg::Vec3 scale = gPAT->getScale();
+	pGeom = dCreateBox(pSpace, (bbox.xMax() - bbox.xMin())*scale.x(), (bbox.yMax() - bbox.yMin())*scale.y(), (bbox.zMax() - bbox.zMin())*scale.z());
+	dGeomSetPosition(pGeom, (bbox.xMax() + bbox.xMin())*0.5*scale.x(), (bbox.yMax() + bbox.yMin())*0.5*scale.y(), (bbox.zMax() + bbox.zMin())*0.5*scale.z());
 }
 
 void Body::initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode) {

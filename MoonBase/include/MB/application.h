@@ -32,6 +32,7 @@
 #define APP_MODE_DEBUG 0x01
 #define APP_MODE_TV 0x02
 #define APP_MODE_STEREO 0x04
+#define APP_MODE_MOUSE 0x08
 
 class Application
 {

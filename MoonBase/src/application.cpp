@@ -143,8 +143,8 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 	if (b1 && b2 && dAreConnected(b1, b2))
 		return;
 
-	//mb::FirstPersonManipulator *cam = app->man;
-	mb::HumanManipulator *cam = app->human;
+	mb::FirstPersonManipulator *cam = app->man;
+	//mb::HumanManipulator *cam = app->human;
 	dGeomID camID = cam->getGeomID();
 
 	//We need to exit here if the objects are both static and not cameras
@@ -289,7 +289,7 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 void Application::setPhysics() {
 	// recreate world
 	pWorld = dWorldCreate();
-	dWorldSetGravity(pWorld, 0, 0, -0.01);
+	dWorldSetGravity(pWorld, 0, -0.01, 0);
 	dWorldSetCFM(pWorld, 1e-10);
 	dWorldSetERP(pWorld, 0.8);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
@@ -341,7 +341,10 @@ void Application::renderLoop() {
 		human->processRevert();
 
 		//Update our objects
-        
+		for (size_t i = 0; i < n_bottles; i++)
+		{
+			bottles[i]->update();
+		}
 
 		//Renders frame decomposing this into all the required events to prevent camera from jittering on collision
         //		viewer.frame();
@@ -373,7 +376,7 @@ void Application::populateScene() {
 	iss = new mb::Group(iss_trans.get());
 	iss->getPAT()->setPivotPoint(osg::Vec3(0, -19.4, -0.4));
 	iss->setCollisionSpace(pSpace);
-	iss->setCollisionBoundingBox(-.9, .9, -3, 2.6, -1, .5);
+	iss->setCollisionBoundingBox(-1, 1, -3.75, 2.6, -1.4, .6);
 	iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
 	root->addChild(iss->getPAT());
 
@@ -394,14 +397,14 @@ void Application::populateScene() {
 		}
 
 		bottles[i]->initPhysics(pWorld, pSpace, 2, mb::BOUNDING_BOX);
-		bottles[i]->setPosition(0, 21, 0);
+		bottles[i]->setPosition(0, 2, 0);
 		root->addChild(bottles[i]->getPAT());
 	}
 
 	//Needed to be brought here because the manipulator needs to be initialized when the selected object list is already set
 	//Camera manipulator
 	man = new mb::FirstPersonManipulator(camera.get());
-	//man->initCollision(pSpace, 0.1f);
+	man->initCollision(pSpace, 0.1f);
 
 	//The new human camera manipulator
 	if (modes & APP_MODE_DEBUG)
@@ -413,7 +416,7 @@ void Application::populateScene() {
 		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEFAULT);
 
 	}
-	human->initCollision(pSpace, 0.1f);
+	//human->initCollision(pSpace, 0.1f);
 	
 	loaderLeftGlove = new mb::Loader("../res/models/astronautgloveleft.osgt");
 	loaderLeftGlove->setRoot<osg::MatrixTransform>();
