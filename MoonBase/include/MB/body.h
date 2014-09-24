@@ -157,6 +157,11 @@ namespace mb {
         //Set angular velocity
         void setAngularVelocity(double x, double y, double z);
 
+		//Set angular acceleration
+		void setAngularAcceleration(double x, double y, double z);
+		void setAngularAcceleration(osg::Vec3 aa);
+		void setAngularAcceleration(dVector3 aa);
+
         //Set linear velocity
         void setLinearVelocity(double x, double y, double z);
 

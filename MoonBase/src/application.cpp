@@ -362,6 +362,7 @@ void Application::renderLoop() {
 
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback);
+		parabolicFlightGravityModifier();
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
 
@@ -471,7 +472,7 @@ void Application::populateScene() {
 	else
 	{
 		loader->getPAT()->setPosition(osg::Vec3(-0.06, 0.4, -0.1));
-		root->addChild(loader->getPAT());
+		//root->addChild(loader->getPAT());
 	}
 
 
@@ -487,7 +488,7 @@ void Application::populateScene() {
 	else
 	{
 		right_glove->setPosition(osg::Vec3(0.06, 0.4, -0.1));
-		root->addChild(right_glove->getPAT());
+		//root->addChild(right_glove->getPAT());
 	}
 
 	//Add full tree to scene
@@ -579,4 +580,60 @@ void Application::hideCursor(){
     {
         (*itr)->useCursor(false);
     }
+}
+
+//Parabolic gravity shift mimicking a parabolic flight
+void Application::parabolicFlightGravityModifier()
+{
+	static unsigned long i = 0;
+	static const unsigned long phase_length = 1000;
+	static const double phase_offset = std::asin(0.995)/(2*M_PI);
+	static const double freq = (1 - 2 * phase_offset) / phase_length;
+	static const double A = 9.81 / 2.0 / 0.995;
+	double g;
+	float torque = 0;
+
+	if (i < phase_length)
+	{
+		//Initial phase with -9.81
+		g = -9.81;
+	}
+	else if (i < 2*phase_length)
+	{
+		//Partial sinusoide increase up until 0G
+		g = -4.905 - A*std::sin(2 * M_PI*(freq*(i - phase_length) + phase_offset));
+		torque = -0.01;
+	}
+	else if (i < 4 * phase_length)
+	{
+		//Stable at 0G
+		g = 0;
+	}
+	else if (i < 5 * phase_length)
+	{
+		//Partial sinusoide decrease back to -1G
+		g = -4.905 + A*std::sin(2 * M_PI*(freq*(i - 4 * phase_length) + phase_offset));
+	}
+	else
+	{
+		//reset counter
+		i = 0;
+		g = -9.81;
+	}
+
+	if (pWorld)
+	{
+		dWorldSetGravity(pWorld, 0, 0, g);
+		if (torque)
+		{
+			for (size_t i = 0; i < n_bottles; i++)
+			{
+				bottles[i]->setAngularVelocity(torque, 0, 0);
+			}
+		}
+	}
+	++i;
+
+	//DEBUG_LOG("Gravity: " << g << "\t" << i);
+
 }

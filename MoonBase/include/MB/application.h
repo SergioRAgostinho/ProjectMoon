@@ -36,6 +36,33 @@
 
 class Application
 {
+private:
+
+	/////////////////////////////////////
+	// Methods
+	/////////////////////////////////////
+
+	//Configure and set the graphical context
+	void setGraphicsContext();
+
+	//Populate scene
+	void populateScene();
+
+	//Render Loop
+	void renderLoop();
+
+	//Set up physics
+	void setPhysics();
+
+	//To hide the cursor in every windows of the osgViewer
+	void hideCursor();
+
+	//Console argument parse
+	void parseConsoleArgument(int argc, char* argv[]);
+
+	//Parabolic gravity shift mimicking a parabolic flight
+	void parabolicFlightGravityModifier();
+
 public:
 	/////////////////////
 	// Application Options
@@ -97,26 +124,9 @@ public:
 	// Methods
 	/////////////////////////////////////
 
-	//Configure and set the graphical context
-	void setGraphicsContext();
-
-	//Populate scene
-	void populateScene();
-
-	//Render Loop
-	void renderLoop();
-
-	//Set up physics
-	void setPhysics();
 
 	//Function called everytime two objects are potencially near
 	static void nearCallback(void *data, dGeomID o1, dGeomID o2);
-
-    //To hide the cursor in every windows of the osgViewer
-    void hideCursor();
-
-    //Console argument parse
-	void parseConsoleArgument(int argc, char* argv[]);
 
 	Application(int argc, char* argv[]);
 	~Application();

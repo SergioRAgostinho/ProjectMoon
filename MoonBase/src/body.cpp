@@ -413,6 +413,33 @@ void Body::setAngularVelocity(double x, double y, double z) {
         dBodySetAngularVel(pBody, x, y, z);
 }
 
+//Set angular acceleration
+void Body::setAngularAcceleration(double x, double y, double z)
+{
+	if (pBody)
+	{
+		dBodySetTorque(pBody, x, y, z);
+	}
+}
+
+//Set angular acceleration
+void Body::setAngularAcceleration(osg::Vec3 aa)
+{
+	if (pBody)
+	{
+		dBodySetTorque(pBody, aa.x(), aa.y(), aa.z());
+	}
+}
+
+//Set angular acceleration
+void Body::setAngularAcceleration(dVector3 aa)
+{
+	if (pBody)
+	{
+		dBodySetTorque(pBody, aa[0], aa[1], aa[2]);
+	}
+}
+
 void Body::setLinearVelocity(double x, double y, double z) {
     if(pBody)
         dBodySetLinearVel(pBody, x, y, z);
