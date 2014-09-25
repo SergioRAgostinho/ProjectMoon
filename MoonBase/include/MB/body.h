@@ -29,7 +29,7 @@ namespace mb {
     
 	enum BodyPhysicsMode
 	{
-		DEFAULT_BODY, BOUNDING_BOX
+		DEFAULT_BODY, BOUNDING_BOX, SPHERE
 	};
 
     class Body : public Object, public osg::Referenced {
@@ -43,6 +43,9 @@ namespace mb {
 
 		//Create a bounding box shaped collision geometry
 		void createBBCollisionGeometry();
+
+		//Create a spherical collision geometry
+		void createSphericalCollisionGeometry(double size);
 
     protected:
 
@@ -110,19 +113,22 @@ namespace mb {
         bool isPBodyEnabled();
 
         //Initialize only the collision geometry
-		void initCollision(dSpaceID space, BodyPhysicsMode mode = DEFAULT_BODY);
+		void initCollision(dSpaceID space, BodyPhysicsMode mode = DEFAULT_BODY, double size = 1.f);
 
 		
 
         //Initialize physics
 		void initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode = DEFAULT_BODY);
-		void initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode = DEFAULT_BODY);
+		void initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode = DEFAULT_BODY, double size = 1.f);
 
         //return the Geode pointer
         osg::Geode* getGeode();
 
         //return the pGeom id
         dGeomID getGeomID();
+
+		//return the pBody id
+		dBodyID getBodyID();
 
         //Set angular velocity
         void getAngularVelocity(double* av);
@@ -136,11 +142,11 @@ namespace mb {
         //Set linear velocity
         double getLinearSpeed();
 
-        //Get Orientation Mat
-        osg::Matrix getOrientationMat();
+        //Get attitude Mat
+        osg::Matrix getAttitudeMat();
 
-        //Get Orientation Quaternion
-        osg::Quat getOrientationQuat();
+        //Get attitude Quaternion
+        osg::Quat getAttitude();
 
         //Get Position
         osg::Vec3 getPosition();
@@ -156,6 +162,8 @@ namespace mb {
 
         //Set angular velocity
         void setAngularVelocity(double x, double y, double z);
+		void setAngularVelocity(osg::Vec3 av);
+		void setAngularVelocity(dVector3 av);
 
 		//Set angular acceleration
 		void setAngularAcceleration(double x, double y, double z);

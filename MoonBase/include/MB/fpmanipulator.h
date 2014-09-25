@@ -44,8 +44,9 @@ namespace mb {
         double offsetScreen;
 
         //Collision requirements
-        dSpaceID pSpace;
-        dGeomID pGeom;
+        //dSpaceID pSpace;
+        //dGeomID pGeom;
+		osg::ref_ptr<mb::Body> body;
         bool revert;
         osg::Vec3d _revertEye;
 
@@ -66,9 +67,15 @@ namespace mb {
 
         //invoked to reposition the camera and to updated any grabbed object maintained with it
         void checkSelectables(osgViewer::View* view, const osgGA::GUIEventAdapter *ea);
+
+		//Output the name and type of node in front of us
+		void displayInfo(osgViewer::View* view, const osgGA::GUIEventAdapter *ea);
+
         void updateGrabbed();
 
-        
+        //Shared constructor 
+		void sharedConstructor();
+
     public:
 
 		FirstPersonManipulator(osg::Camera* cam);
@@ -99,11 +106,20 @@ namespace mb {
         void initCollision(dSpaceID s);
         void initCollision(dSpaceID s, float colRadius);
 
+		//Initialize physics
+		void initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode = DEFAULT_BODY);
+		void initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode = DEFAULT_BODY, double size = 1.f);
+
         //Check the status on the revert flage
         void armRevert(double x, double y, double z);
 
         //Process an armed revert
         void processRevert();
+
+		//Set angular acceleration
+		void setAngularAcceleration(double x, double y, double z);
+		void setAngularAcceleration(osg::Vec3 aa);
+		void setAngularAcceleration(dVector3 aa);
 
         /** set the position of the matrix manipulator using a 4x4 Matrix.*/
         void setByMatrix(const osg::Matrixd& matrix);
@@ -119,6 +135,10 @@ namespace mb {
 
         //update the record of the object position
         void updateGrabbedPos(osg::Vec3 pos);
+
+		//ensures consistency between the body in the physical engine and its rendering.
+		//it should be called after world step from the physics engine
+		void update();
 
     protected:
         

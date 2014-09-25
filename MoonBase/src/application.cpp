@@ -1,6 +1,7 @@
 
 #include <osgGA/FirstPersonManipulator>
 #include <osgViewer/View>
+#include <osgDB/WriteFile>
 #include <MB/application.h>
 #include <MB/keyboardeventhandler.h>
 #include <MB/utils.hpp>
@@ -9,7 +10,7 @@
 
 
 Application::Application(int argc, char* argv[]) :
-n_bottles(20)
+n_bottles(0), n_crates(20)
 {
 	//Parse console arguments if there any modifier
 	modes = APP_MODE_STANDARD;
@@ -30,6 +31,7 @@ n_bottles(20)
 	iss = nullptr;
 	left_glove = nullptr;
 	right_glove = nullptr;
+	crates = nullptr;
 
 	//to delete
 	bottles = nullptr;
@@ -362,7 +364,7 @@ void Application::renderLoop() {
 
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback);
-		parabolicFlightGravityModifier();
+		//parabolicFlightGravityModifier();
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
 
@@ -373,6 +375,7 @@ void Application::renderLoop() {
 			//mb::Body* grabbedBody = man->getGrabbedBody();
 			//if (grabbedBody && man->getGrabbedComplete())
 			//	grabbedBody->processRevert();
+			man->update();
 		}
 		else
 		{
@@ -385,6 +388,10 @@ void Application::renderLoop() {
 		for (size_t i = 0; i < n_bottles; i++)
 		{
 			bottles[i]->update();
+		}
+		for (size_t i = 0; i < n_crates; i++)
+		{
+			crates[i]->update();
 		}
 
 		//Renders frame decomposing this into all the required events to prevent camera from jittering on collision
@@ -412,10 +419,43 @@ void Application::populateScene() {
 	iss->setCollisionSpace(pSpace);
 	iss->setCollisionBoundingBox(-1, 1, -3.75, 2.6, -1.4, .6);
 	iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
+	iss->setPosition(0, -3.75, 0);
 	root->addChild(iss->getPAT());
 
 	//Disable astro man
 	loader->getNode<osg::Group>("o1")->getParent(0)->setNodeMask(0x00);
+
+	//Dump crates inside columbus
+	loader = new mb::Loader("../res/models/box.osgt");
+	loader->printGraph();
+	crates = new osg::ref_ptr<mb::Body>[n_crates];
+	for (size_t i = 0; i < n_crates; i++)
+	{
+		if (i == 0)
+		{
+
+			//crates[0] = new mb::Body(loader->getNode<osg::Geode>("Columbus_int_f0"));
+			//crates[0] = new mb::Body(loader->getNode<osg::Geode>("Kibo_int_f9491"));
+			crates[0] = new mb::Body(loader->getNode<osg::Geode>("GeodeColumb"));
+			crates[0]->initPhysics(pWorld, pSpace, 2, mb::BOUNDING_BOX);
+		} 
+		else
+		{
+			crates[i] = crates[0]->clone();
+		}
+
+		//Random position
+		//crates[i]->setPosition(mb::uniRand(-0.9, 0.9), mb::uniRand(-2.6, 3.65), mb::uniRand(-1.3, .5));
+		crates[i]->setPosition(mb::uniRand(-0.9, 0.9), mb::uniRand(-6.25, 0), mb::uniRand(-1.3, .5));
+		//random linear velocity
+		crates[i]->setLinearVelocity(mb::uniRand(-.1, .1), mb::uniRand(-.1, .1), mb::uniRand(-.1, .1));
+		//random attitude
+		osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1), mb::uniRand(-1, 1), mb::uniRand(-1, 1));
+		axis.normalize();
+		crates[i]->setAttitude(osg::Quat(mb::uniRand(-M_PI, M_PI), axis));
+
+		root->addChild(crates[i]->getPAT());
+	}
 
 	//Dump bottles inside the ISS
 	loader = new mb::Loader("../res/models/muscatel.osgt");
@@ -436,7 +476,12 @@ void Application::populateScene() {
 		//Random position
 		bottles[i]->setPosition(mb::uniRand(-0.9, 0.9), mb::uniRand(-2.6, 3.65), mb::uniRand(-1.3, .5));
 		//random linear velocity
-		bottles[i]->setLinearVelocity(mb::uniRand(-1, 1), mb::uniRand(-1, 1), mb::uniRand(-1, 1));
+		bottles[i]->setLinearVelocity(mb::uniRand(-.1, .1), mb::uniRand(-.1, .1), mb::uniRand(-.1, .1));
+		//random attitude
+		osg::Vec3 axis = osg::Vec3(mb::uniRand(-1, 1), mb::uniRand(-1, 1), mb::uniRand(-1, 1));
+		axis.normalize();
+		bottles[i]->setAttitude(osg::Quat(mb::uniRand(-M_PI, M_PI), axis));
+
 		root->addChild(bottles[i]->getPAT());
 	}
 
@@ -446,12 +491,13 @@ void Application::populateScene() {
 	{
 		man = new mb::FirstPersonManipulator(camera.get());
 		man->initCollision(pSpace, 0.1f);
+		//man->initPhysics(pWorld, pSpace, 10, mb::SPHERE, 0.1f);
 	}
 	else if (modes & APP_MODE_DEBUG)
 	{
 		//The new human camera manipulator
 		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEBUG_WINDOW);
-		human->initCollision(pSpace, 0.1f);
+		human->initCollision(pSpace, 0.2f);
 	}
 	else
 	{
@@ -546,6 +592,7 @@ void Application::setGraphicsContext() {
 	traits->sharedContext = 0;
 	traits->useCursor = false;
 	traits->overrideRedirect = true;
+	traits->samples = 16;
 
 	gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 	camera = viewer.getCamera();
@@ -554,11 +601,14 @@ void Application::setGraphicsContext() {
 	camera->setDrawBuffer(buffer);
 	camera->setReadBuffer(buffer);
 
+	osg::ref_ptr<osg::DisplaySettings> disp_settings = osg::DisplaySettings::instance();
+	disp_settings->setNumMultiSamples(16);
+
+
 	viewer.setUpViewOnSingleScreen(screen_id);
 
 	//Activate stereo
 	if (modes & APP_MODE_STEREO) {
-		osg::ref_ptr<osg::DisplaySettings> disp_settings = osg::DisplaySettings::instance();
 		disp_settings->setStereoMode(osg::DisplaySettings::HORIZONTAL_SPLIT);
 		disp_settings->setEyeSeparation(0.003);
 		disp_settings->setStereo(true);
@@ -591,7 +641,7 @@ void Application::parabolicFlightGravityModifier()
 	static const double freq = (1 - 2 * phase_offset) / phase_length;
 	static const double A = 9.81 / 2.0 / 0.995;
 	double g;
-	float torque = 0;
+	bool torque = false;
 
 	if (i < phase_length)
 	{
@@ -602,7 +652,7 @@ void Application::parabolicFlightGravityModifier()
 	{
 		//Partial sinusoide increase up until 0G
 		g = -4.905 - A*std::sin(2 * M_PI*(freq*(i - phase_length) + phase_offset));
-		torque = -0.01;
+		torque = true;
 	}
 	else if (i < 4 * phase_length)
 	{
@@ -628,8 +678,9 @@ void Application::parabolicFlightGravityModifier()
 		{
 			for (size_t i = 0; i < n_bottles; i++)
 			{
-				bottles[i]->setAngularVelocity(torque, 0, 0);
+				bottles[i]->setAngularVelocity(osg::Vec3(mb::uniRand(-.005, .005), mb::uniRand(-.005, .005), mb::uniRand(-.005, .005)));
 			}
+			//man->setAngularAcceleration(osg::Vec3(mb::uniRand(-.005, .005), mb::uniRand(-.005, .005), mb::uniRand(-.005, .005)));
 		}
 	}
 	++i;

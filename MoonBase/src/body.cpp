@@ -91,8 +91,8 @@ Body::~Body() {}
 osg::Quat Body::align(mb::Body *ref) {
 
     osg::Matrix R_new;
-    osg::Matrix R = ref->getOrientationMat();
-    osg::Matrix A = this->getOrientationMat();
+    osg::Matrix R = ref->getAttitudeMat();
+    osg::Matrix A = getAttitudeMat();
 
     //Rows not collums!!!!!!
 
@@ -226,7 +226,7 @@ Body* Body::clone() {
     return out;
 }
 
-void Body::initCollision(dSpaceID space, BodyPhysicsMode mode) {
+void Body::initCollision(dSpaceID space, BodyPhysicsMode mode, double size) {
     pSpace = space;
 	if (!pGeom) {
 		
@@ -254,6 +254,9 @@ void Body::initCollision(dSpaceID space, BodyPhysicsMode mode) {
 			break;
 		case mb::BOUNDING_BOX:
 			createBBCollisionGeometry();
+			break;
+		case mb::SPHERE:
+			createSphericalCollisionGeometry(size);
 			break;
 		default:
 			break;
@@ -286,13 +289,31 @@ void Body::createBBCollisionGeometry()
 	dGeomSetPosition(pGeom, (bbox.xMax() + bbox.xMin())*0.5*scale.x(), (bbox.yMax() + bbox.yMin())*0.5*scale.y(), (bbox.zMax() + bbox.zMin())*0.5*scale.z());
 }
 
-void Body::initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode) {
-    initPhysics(world, space, 1);
+//Create a spherical collision geometry
+void Body::createSphericalCollisionGeometry(double size)
+{
+	if (pGeom)
+	{
+		//existing geometry already?
+		DEBUG_WARNING("Creating new geometry on top of the old one. Unexpected results may occur.");
+		try {
+			dSpaceRemove(pSpace, pGeom);
+		}
+		catch (std::exception e) {}
+	}
+
+	pGeom = dCreateSphere(pSpace, (dReal)size);
+	osg::Vec3 pos = gPAT->getPosition();
+	dGeomSetPosition(pGeom, pos.x(), pos.y(), pos.z());
 }
 
-void Body::initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode) {
+void Body::initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode) {
+	initPhysics(world, space, 1, mode);
+}
+
+void Body::initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode, double size) {
     pWorld = world;
-    initCollision(space, mode);
+    initCollision(space, mode, size);
 
     dMass mass;
     initMass(&mass, massAmount);
@@ -323,7 +344,14 @@ void Body::initMass(dMass* mass, double amount) {
             dMassTranslate( mass, -mass->c[0], -mass->c[1], -mass->c[2] );
             //Not sure if i need to translate more stuff
             break;
+		case dSphereClass:
+		{
+			dReal radius = dGeomSphereGetRadius(pGeom);
+			dMassSetSphereTotal(mass, amount, radius);
+		}
+			break;
         default:
+			throw NotImplementedException();
             break;
     }
 
@@ -342,6 +370,9 @@ osg::Geode* Body::getGeode() { return gGeode.get(); }
 
 //return the pGeom id
 dGeomID Body::getGeomID() { return pGeom; };
+
+//return the pBody id
+dBodyID Body::getBodyID() { return pBody; };
 
 void Body::setGeode(osg::Geode *geode) {
     gGeode = geode;
@@ -392,14 +423,14 @@ double Body::getLinearSpeed() {
 };
 
 //Get Orientation Quat
-osg::Matrix Body::getOrientationMat() {
+osg::Matrix Body::getAttitudeMat() {
     osg::Matrix out;
     (gPAT->getAttitude()).get(out);
     return out;
 }
 
 //Get Orientation Mat
-osg::Quat Body::getOrientationQuat() {
+osg::Quat Body::getAttitude() {
     return gPAT->getAttitude();
 };
 
@@ -411,6 +442,24 @@ osg::Vec3 Body::getPosition() {
 void Body::setAngularVelocity(double x, double y, double z) {
     if(pBody)
         dBodySetAngularVel(pBody, x, y, z);
+}
+
+//Set angular velocity
+void Body::setAngularVelocity(osg::Vec3 av)
+{
+	if (pBody)
+	{
+		dBodySetAngularVel(pBody, av.x(), av.y(), av.z());
+	}
+}
+
+//Set angular velocity
+void Body::setAngularVelocity(dVector3 av)
+{
+	if (pBody)
+	{
+		dBodySetAngularVel(pBody, av[0], av[1], av[2]);
+	}
 }
 
 //Set angular acceleration
@@ -669,3 +718,4 @@ void Body::toggleBB() {
 void Body::togglePermBB() {
     gPermBB = !gPermBB;
 }
+

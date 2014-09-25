@@ -24,10 +24,10 @@ using namespace mb;
 
 HumanManipulator::HumanManipulator() : 
 front_scale(0.8),
-front_offset(0.1),
-lat_scale(0.4),
-lat_offset(0),
-vert_scale(0.4),
+front_offset(0.4),
+lat_scale(0.6),
+lat_offset(0.1),
+vert_scale(0.6),
 vert_offset(0)
 {
 	_mode = DEFAULT;
@@ -35,11 +35,11 @@ vert_offset(0)
 }
 
 HumanManipulator::HumanManipulator(osgViewer::Viewer* v, HumanManipulatorMode mode) :
-front_scale(0.8), 
-front_offset(0.1),
-lat_scale(0.4),
-lat_offset(0),
-vert_scale(0.4),
+front_scale(0.8),
+front_offset(0.4),
+lat_scale(0.6),
+lat_offset(0.1),
+vert_scale(0.6),
 vert_offset(0)
 {
 	
@@ -188,7 +188,7 @@ void HumanManipulator::processSkeleton() {
 
 				//Position update
 				Vector4 centre = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER];
-				_movement.set(centre.x, centre.y, centre.z);
+				_movement.set(centre.x, centre.y, 2*centre.z);
 
 				Vector4 l_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT];
 				l_hand_in_cam.set(lat_scale*(l_hand_coords.x - centre.x) - lat_offset, 

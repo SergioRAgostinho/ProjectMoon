@@ -33,6 +33,16 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
 						body->setAngularVelocity(uniRand(-1, 1), uniRand(-1, 1), uniRand(-1, 1));
 					}
                     break;
+				case 'm':
+				case 'M':
+					if (app->crates)
+					{
+						for (size_t i = 0; i < app->n_crates; i++)
+						{
+							app->crates[i]->setLinearVelocity(mb::uniRand(-.1, .1), mb::uniRand(-.1, .1), mb::uniRand(-.1, .1));
+						}
+					}
+					break;
                 case 'r':
                 case 'R':
                     //align with other object

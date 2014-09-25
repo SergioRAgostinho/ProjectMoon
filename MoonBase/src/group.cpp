@@ -184,3 +184,40 @@ void Group::setAttitudeMatrixODE(dMatrix3 mat)
 		mat[7], mat[8], mat[9], 0,
 		0, 0, 0, 0).getRotate());
 }
+
+//Set Common position
+void Group::setPosition(osg::Vec3 pos)
+{
+	gPAT->setPosition(pos);
+	if (pGeom)
+	{
+		for (size_t i = 0; i < n_pGeom; i++)
+		{
+			//We need to ensure the geom is placeable, aka different than infinite plane
+			if (pGeomClass[i] != dPlaneClass)
+			{
+				dGeomSetPosition(pGeom[i], pos.x(), pos.y(), pos.z());
+			}
+			else
+			{
+				//If it is a plane we need to move
+				dReal params[4];
+				dGeomPlaneGetParams(pGeom[i], params);
+				double d = params[3] + params[0] * pos.x() + params[1] * pos.y() + params[2] * pos.z();
+				dGeomPlaneSetParams(pGeom[i], params[0], params[1], params[2], d);
+			}
+		}
+	}
+}
+
+//Set Common position
+void Group::setPosition(dVector3 pos)
+{
+	setPosition(osg::Vec3(pos[0], pos[1], pos[2]));
+}
+
+//Set Common position
+void Group::setPosition(double x, double y, double z)
+{
+	setPosition(osg::Vec3(x, y, z));
+}

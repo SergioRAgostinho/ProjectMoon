@@ -17,6 +17,24 @@ using namespace mb;
 
 FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam) : camera(cam) {
 
+	sharedConstructor();
+}
+
+FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Body*> *b) : camera(cam) ,selectableBodies(b) {
+
+	sharedConstructor();
+
+    selected = new bool[selectableBodies->size()]();
+    memset(selected,0,selectableBodies->size()*sizeof(bool));
+    active = new bool[selectableBodies->size()]();
+    memset(active,0,selectableBodies->size()*sizeof(bool));
+    inactiveCounter = new int[selectableBodies->size()]();
+    memset(inactiveCounter,0,selectableBodies->size()*sizeof(int));
+}
+
+void FirstPersonManipulator::sharedConstructor()
+{
+	//Setting 
 	translationFactor = 0.04;
 	_mouvement.set(0, 0, 0);
 	deltaTZ = 0;
@@ -37,31 +55,9 @@ FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam) : camera(cam) {
 	inactiveCounter = nullptr;
 
 	revert = false;
-}
 
-FirstPersonManipulator::FirstPersonManipulator(osg::Camera* cam, std::vector<Body*> *b) : camera(cam) ,selectableBodies(b) {
-
-    translationFactor = 0.04;
-    _mouvement.set(0,0,0);
-    deltaTZ = 0;
-    deltaRX = 0;
-    deltaRY = 0;
-#ifdef WIN32 
-	offsetScreen = 150.0;
-#else
-    offsetScreen = 50.0;
-#endif
-
-    screenCenter.set(0, 0);
-
-    selected = new bool[selectableBodies->size()]();
-    memset(selected,0,selectableBodies->size()*sizeof(bool));
-    active = new bool[selectableBodies->size()]();
-    memset(active,0,selectableBodies->size()*sizeof(bool));
-    inactiveCounter = new int[selectableBodies->size()]();
-    memset(inactiveCounter,0,selectableBodies->size()*sizeof(int));
-
-    revert = false;
+	//Set up the potencial collision body
+	body = nullptr;
 }
 
 FirstPersonManipulator::~FirstPersonManipulator() {
@@ -100,12 +96,13 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
 
             _eye+= _rotation * _mouvement;
             _eye += osg::Vec3d(0,0,deltaTZ);
-			if (pGeom)
-			{
-				dGeomSetPosition(pGeom, (dReal)_eye.x(), (dReal)_eye.y(), (dReal)_eye.z());
-			}
             rotateYawPitch(_rotation, deltaRX * 0.001, deltaRY * 0.001, osg::Vec3(0,0,1));
-            deltaTZ = 0;
+			if (body)
+			{
+				body->setPosition(_eye);
+				body->setAttitude(_rotation);
+			}
+			deltaTZ = 0;
             deltaRX = 0;
             deltaRY = 0;
             frameEvent = true;
@@ -117,6 +114,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
         //handling keyboard events
         case osgGA::GUIEventAdapter::KEYDOWN :
         {
+
             switch (ea.getKey()) {
                 case 'w':
                 case 'W':
@@ -145,8 +143,8 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             switch (ea.getKey()) {
                 case 'w':
                 case 'W':
-                    if(_mouvement.z()==-translationFactor)
-                        _mouvement.set(_mouvement.x(), _mouvement.y(),0);
+					if (_mouvement.z() == -translationFactor)
+						_mouvement.set(_mouvement.x(), _mouvement.y(), 0);
                     break;
                 case 'a':
                 case 'A':
@@ -252,8 +250,13 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
                 grabbedBody = selectedBody;
                 grabbedBody->setAngularVelocity(0, 0, 0);
 
-                _rotationGrab =  grabbedBody->getOrientationQuat() * (corr * _rotation).conj();
-            }
+                _rotationGrab =  grabbedBody->getAttitude() * (corr * _rotation).conj();
+			}
+			else
+			{
+				osgViewer::View* view = dynamic_cast<osgViewer::View*>(&us);
+				displayInfo(view, &ea);
+			}
             break;
         }
         case osgGA::GUIEventAdapter::RELEASE:
@@ -322,7 +325,7 @@ bool FirstPersonManipulator::handle (const osgGA::GUIEventAdapter &ea, osgGA::GU
             for (auto bd : *selectableBodies) {
                 if (bd != grabbedBody && (grabbedBody->getPosition() - bd->getPosition()).length() <= 50) {
 
-                    q_init = grabbedBody->getOrientationQuat();
+                    q_init = grabbedBody->getAttitude();
                     q_final = grabbedBody->align(bd);
                     alignRef = bd;
                     align = true;
@@ -349,8 +352,8 @@ void FirstPersonManipulator::setTransformation( const osg::Vec3d& eye, const osg
     // set variables
     osg::Matrixd m( osg::Matrixd::lookAt( eye, center, up ) );
     _eye = eye;
-	if (pGeom)
-		dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+	if (body)
+		body->setPosition(_eye);
     _rotation = m.getRotate().inverse();
 
     //Fix vertical something
@@ -368,7 +371,11 @@ void FirstPersonManipulator::getTransformation( osg::Vec3d& eye, osg::Vec3d& cen
 
 //Get the geometry id
 dGeomID FirstPersonManipulator::getGeomID() {
-    return pGeom;
+	if (body)
+	{
+		return body->getGeomID();
+	}
+    return nullptr;
 }
 
 //Get the geometry id
@@ -396,8 +403,33 @@ void FirstPersonManipulator::initCollision(dSpaceID s) {
     initCollision(s, 20);
 }
 void FirstPersonManipulator::initCollision(dSpaceID s, float colRadius) {
-    pSpace = s;
-    pGeom = dCreateSphere(pSpace, (dReal) colRadius);
+	if (body)
+	{
+		DEBUG_WARNING("FirstPersonManipulator::initPhysics - Overwriting old body");
+	}
+	body = new Body();
+	body->setPosition(_eye);
+	body->setAttitude(_rotation);
+	body->initCollision(s, SPHERE, (double)colRadius);
+}
+
+//Initialize physics
+void FirstPersonManipulator::initPhysics(dWorldID world, dSpaceID space, BodyPhysicsMode mode)
+{
+	initPhysics(world, space, 1, mode);
+}
+
+//Initialize physics
+void FirstPersonManipulator::initPhysics(dWorldID world, dSpaceID space, double massAmount, BodyPhysicsMode mode, double size)
+{
+	if (body)
+	{
+		DEBUG_WARNING("FirstPersonManipulator::initPhysics - Overwriting old body");
+	}
+	body = new Body();
+	body->setPosition(_eye);
+	body->setAttitude(_rotation);
+	body->initPhysics(world, space, massAmount, mode, size);
 }
 
 //Check the status on the revert flag
@@ -413,10 +445,40 @@ void FirstPersonManipulator::processRevert() {
     }
 
     _eye += _revertEye;
-    dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
+	if (body)
+	{
+		body->setPosition(_eye);
+	}
     _revertEye.set(0,0,0);
     revert = false;
 
+}
+
+//Set angular acceleration
+void FirstPersonManipulator::setAngularAcceleration(double x, double y, double z)
+{
+	if (body)
+	{
+		body->setAngularAcceleration(x, y, z);
+	}
+}
+
+//Set angular acceleration
+void FirstPersonManipulator::setAngularAcceleration(osg::Vec3 aa)
+{
+	if (body)
+	{
+		body->setAngularAcceleration(aa);
+	}
+}
+
+//Set angular acceleration
+void FirstPersonManipulator::setAngularAcceleration(dVector3 aa)
+{
+	if (body)
+	{
+		body->setAngularAcceleration(aa);
+	}
 }
 
 /** set the position of the matrix manipulator using a 4x4 Matrix.*/
@@ -424,9 +486,13 @@ void FirstPersonManipulator::setByMatrix(const osg::Matrixd& matrix){
 
     // set variables
     _eye = matrix.getTrans();
-	if (pGeom)
-		dGeomSetPosition(pGeom, (dReal) _eye.x(), (dReal) _eye.y(), (dReal) _eye.z());
     _rotation = matrix.getRotate();
+	if (body)
+	{
+		body->setPosition(_eye);
+		body->setAttitude(_rotation);
+	}
+
 
     //set the mouse to the center of screen
     _mouse = osg::Vec2d(_mouseCenterX,_mouseCenterY);
@@ -519,6 +585,32 @@ void FirstPersonManipulator::checkSelectables(osgViewer::View* view,const osgGA:
     }
 }
 
+//Output the name and type of node in front of us
+void FirstPersonManipulator::displayInfo(osgViewer::View* view, const osgGA::GUIEventAdapter *ea)
+{
+	osgUtil::LineSegmentIntersector::Intersections intersections;
+	pointerInfo.reset();
+
+	if (view->computeIntersections(screenCenter.x(), screenCenter.y(), intersections)) {
+		pointerInfo.setCamera(camera);
+		pointerInfo.setMousePosition(ea->getWindowWidth() >> 1, ea->getWindowHeight() >> 1);
+
+
+		for (osgUtil::LineSegmentIntersector::Intersections::iterator interIter = intersections.begin(); interIter != intersections.end(); ++interIter) {
+			pointerInfo.addIntersection(interIter->nodePath, interIter->getLocalIntersectPoint());
+		}
+
+		for (auto &it : pointerInfo._hitList) {
+			for (osg::NodePath::iterator npIter = it.first.begin(); npIter != it.first.end(); ++npIter) {
+				std::cout << "Node: " << (*npIter)->getName() << " <" << (*npIter)->className() << ">" <<std::endl;
+			}
+		}
+
+		std::cout << std::endl;
+	}
+
+}
+
 void FirstPersonManipulator::updateGrabbed() {
     //Compute the relative distance
     osg::Vec3 pos = _eye + _rotation * osg::Vec3(0,0,-30);
@@ -573,3 +665,16 @@ void FirstPersonManipulator::updateGrabbedPos(osg::Vec3 pos) {
     _eyeGrab.set(pos);
 }
 
+//ensures consistency between the body in the physical engine and its rendering.
+//it should be called after world step from the physics engine
+void FirstPersonManipulator::update()
+{
+	if (body)
+	{
+		//update from physics
+		body->update();
+		//propagate to internal state
+		_eye.set(body->getPosition());
+		_rotation.set(body->getAttitude().asVec4());
+	}
+}

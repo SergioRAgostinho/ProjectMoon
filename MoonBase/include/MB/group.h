@@ -65,6 +65,11 @@ namespace mb {
 		//additional definition to go around the overload constraint
 		void setAttitudeMatrixODE(dMatrix3 mat);
 
+		//Set Common position
+		void setPosition(osg::Vec3 pos);
+		void setPosition(dVector3 pos);
+		void setPosition(double x, double y, double z);
+
 	protected:
 		~Group();
 	};

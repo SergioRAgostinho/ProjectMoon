@@ -25,9 +25,6 @@
 #include <MB/humanmanipulator.h>
 #include <MB/group.h>
 
-#define N_CUBES 1
-#define N_BOTTLES 100
-
 #define APP_MODE_STANDARD 0x00
 #define APP_MODE_DEBUG 0x01
 #define APP_MODE_TV 0x02
@@ -96,6 +93,9 @@ public:
 	//to delete
 	osg::ref_ptr<mb::Body> *bottles;
 	const unsigned int n_bottles;
+
+	osg::ref_ptr<mb::Body> *crates;
+	const unsigned int n_crates;
 
 	//Loaders
 	osg::ref_ptr<mb::Loader> loader;
