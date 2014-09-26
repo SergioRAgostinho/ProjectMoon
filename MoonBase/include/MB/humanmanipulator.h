@@ -74,7 +74,7 @@ namespace mb {
 		//osg::ref_ptr<osg::PositionAttitudeTransform> l_hand, r_hand;
 		osg::ref_ptr<mb::Body> l_hand, r_hand;
 		osg::Vec3 l_hand_in_cam, r_hand_in_cam;
-		osg::Quat l_hand_quat_in_cam, r_hand_quat_in_cam;
+		osg::Quat l_hand_quat_in_cam, r_hand_quat_in_cam, c_quat_in_cam;
 
 		//Hand representation sensitivity parameters
 		const float front_offset, front_scale;

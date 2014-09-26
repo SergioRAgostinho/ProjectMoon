@@ -503,7 +503,7 @@ void Application::populateScene() {
 	{
 		//The new human camera manipulator
 		human = new mb::HumanManipulator(&viewer, mb::HumanManipulatorMode::DEFAULT);
-		human->initCollision(pSpace, 0.1f);
+		human->initCollision(pSpace, 0.2f);
 	}
 	
 	loader = new mb::Loader("../res/models/astronautgloveleft.osgt");
@@ -518,7 +518,7 @@ void Application::populateScene() {
 	else
 	{
 		loader->getPAT()->setPosition(osg::Vec3(-0.06, 0.4, -0.1));
-		//root->addChild(loader->getPAT());
+		root->addChild(loader->getPAT());
 	}
 
 
@@ -534,7 +534,7 @@ void Application::populateScene() {
 	else
 	{
 		right_glove->setPosition(osg::Vec3(0.06, 0.4, -0.1));
-		//root->addChild(right_glove->getPAT());
+		root->addChild(right_glove->getPAT());
 	}
 
 	//Add full tree to scene

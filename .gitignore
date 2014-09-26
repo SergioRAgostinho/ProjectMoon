@@ -15,6 +15,7 @@
 *.plist
 *.osg
 *.osgt
+*.3ds
 doc/
 textures/
 models/

@@ -83,11 +83,10 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 	r_hand_in_cam = osg::Vec3(0.06, -0.1, -0.4);
 	l_hand_quat_in_cam = osg::Quat();
 	r_hand_quat_in_cam = osg::Quat();
+	c_quat_in_cam = osg::Quat();
 
 	//Initializing the hands sensitivty parameters
-	//front_scale = 0.8;
-	//front_offset = 0;
-
+	//(done in the class initializers due to const modifier)
 }
 
 
@@ -203,6 +202,9 @@ void HumanManipulator::processSkeleton() {
 				//Attitude updates
 				NUI_SKELETON_BONE_ORIENTATION boneOrientations[NUI_SKELETON_POSITION_COUNT];
 				NuiSkeletonCalculateBoneOrientations(&(s_frame.SkeletonData[i]), boneOrientations);
+
+				Vector4 c_quat = boneOrientations[NUI_SKELETON_POSITION_SHOULDER_CENTER].absoluteRotation.rotationQuaternion;
+				c_quat_in_cam.set(c_quat.x, c_quat.y, c_quat.z, c_quat.w);
 
 				Vector4 l_wrist_quat = boneOrientations[NUI_SKELETON_POSITION_WRIST_LEFT].absoluteRotation.rotationQuaternion;
 				l_hand_quat_in_cam.set(l_wrist_quat.x, l_wrist_quat.y, l_wrist_quat.z, l_wrist_quat.w);
@@ -507,6 +509,10 @@ bool HumanManipulator::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAction
 	{
 	case osgGA::GUIEventAdapter::FRAME:
 		
+		//Tests
+		//_rotation = c_quat_in_cam.conj();
+
+		//Working
 		_eye = _rotation * _movement;
 		if (pGeom)
 		{
