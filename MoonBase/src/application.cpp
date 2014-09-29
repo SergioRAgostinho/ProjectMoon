@@ -308,12 +308,12 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
         /////////////////////////
 
 		for (i = 0; i<n; i++) {
-            contact[i].surface.mode = dContactBounce | dContactSoftCFM;
-            contact[i].surface.mu = dInfinity;
-            contact[i].surface.mu2 = 0;
-            contact[i].surface.bounce = 0.1;
-            contact[i].surface.bounce_vel = 0.01;
-            contact[i].surface.soft_cfm = 0.001;
+			contact[i].surface.mode = dContactBounce | dContactSoftCFM;
+			contact[i].surface.mu = dInfinity;
+			contact[i].surface.mu2 = 0;
+			contact[i].surface.bounce = 0.001;
+			contact[i].surface.bounce_vel = 0.001;
+			contact[i].surface.soft_cfm = 1e-2;
 			dJointID c = dJointCreateContact(app->pWorld, app->pCollisionJG, contact + i);
 			dJointAttach(c, dGeomGetBody(o1), dGeomGetBody(o2));
 		}
@@ -321,10 +321,11 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 }
 
 void Application::setPhysics() {
+
 	// recreate world
 	pWorld = dWorldCreate();
 	dWorldSetGravity(pWorld, 0, 0, 0);
-	dWorldSetCFM(pWorld, 1e-10);
+	dWorldSetCFM(pWorld, 1e-10); //being overwritten inside near callback
 	dWorldSetERP(pWorld, 0.8);
 	dWorldSetQuickStepNumIterations(pWorld, nIterSteps);
 
@@ -419,7 +420,7 @@ void Application::populateScene() {
 	iss->setCollisionSpace(pSpace);
 	iss->setCollisionBoundingBox(-1, 1, -3.75, 2.6, -1.4, .6);
 	iss->setAttitude(osg::Quat(M_PI, osg::Vec3(0, 0, 1)));
-	iss->setPosition(0, -3.75, 0);
+	iss->setPosition(0, -4.25, 0);
 	root->addChild(iss->getPAT());
 
 	//Disable astro man
@@ -427,15 +428,11 @@ void Application::populateScene() {
 
 	//Dump crates inside columbus
 	loader = new mb::Loader("../res/models/box.osgt");
-	loader->printGraph();
 	crates = new osg::ref_ptr<mb::Body>[n_crates];
 	for (size_t i = 0; i < n_crates; i++)
 	{
 		if (i == 0)
 		{
-
-			//crates[0] = new mb::Body(loader->getNode<osg::Geode>("Columbus_int_f0"));
-			//crates[0] = new mb::Body(loader->getNode<osg::Geode>("Kibo_int_f9491"));
 			crates[0] = new mb::Body(loader->getNode<osg::Geode>("GeodeColumb"));
 			crates[0]->initPhysics(pWorld, pSpace, 2, mb::BOUNDING_BOX);
 		} 
@@ -445,7 +442,6 @@ void Application::populateScene() {
 		}
 
 		//Random position
-		//crates[i]->setPosition(mb::uniRand(-0.9, 0.9), mb::uniRand(-2.6, 3.65), mb::uniRand(-1.3, .5));
 		crates[i]->setPosition(mb::uniRand(-0.9, 0.9), mb::uniRand(-6.25, 0), mb::uniRand(-1.3, .5));
 		//random linear velocity
 		crates[i]->setLinearVelocity(mb::uniRand(-.1, .1), mb::uniRand(-.1, .1), mb::uniRand(-.1, .1));
@@ -643,26 +639,37 @@ void Application::parabolicFlightGravityModifier()
 	double g;
 	bool torque = false;
 
-	if (i < phase_length)
+	static const unsigned long first_dur = 0.0f * phase_length;
+	static const unsigned long second_dur = phase_length; //dont change duration
+	static const unsigned long third_dur = 2*phase_length;
+	static const unsigned long fourth_dur = phase_length; //dont change duration
+
+	static const unsigned long first_fin = first_dur;
+	static const unsigned long second_fin = first_fin + second_dur;
+	static const unsigned long third_fin = second_fin + third_dur;
+	static const unsigned long fourth_fin = third_fin + fourth_dur;
+
+
+	if (i < first_fin)
 	{
 		//Initial phase with -9.81
 		g = -9.81;
 	}
-	else if (i < 2*phase_length)
+	else if (i < second_fin)
 	{
 		//Partial sinusoide increase up until 0G
-		g = -4.905 - A*std::sin(2 * M_PI*(freq*(i - phase_length) + phase_offset));
+		g = -4.905 - A*std::sin(2 * M_PI*(freq*(i - first_fin) + phase_offset));
 		torque = true;
 	}
-	else if (i < 4 * phase_length)
+	else if (i < third_fin)
 	{
 		//Stable at 0G
 		g = 0;
 	}
-	else if (i < 5 * phase_length)
+	else if (i < fourth_fin)
 	{
 		//Partial sinusoide decrease back to -1G
-		g = -4.905 + A*std::sin(2 * M_PI*(freq*(i - 4 * phase_length) + phase_offset));
+		g = -4.905 + A*std::sin(2 * M_PI*(freq*(i - third_fin) + phase_offset));
 	}
 	else
 	{

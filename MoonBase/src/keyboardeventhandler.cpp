@@ -17,6 +17,7 @@ KeyboardEventHandler::KeyboardEventHandler(Application* a) : app(a) {}
 bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa) {
 
 	Body* body = nullptr;
+	static bool gravity = false;
 
     //    static int counter = 0;
     //    std::cout << " KEY: " << counter++ << std::endl;
@@ -33,6 +34,25 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIAc
 						body->setAngularVelocity(uniRand(-1, 1), uniRand(-1, 1), uniRand(-1, 1));
 					}
                     break;
+				case 'g':
+				case 'G':
+					gravity = !gravity;
+					if (gravity)
+					{
+						dWorldSetGravity(app->pWorld, 0, 0, -1);
+					}
+					else
+					{
+						dWorldSetGravity(app->pWorld, 0, 0, 0);
+						if (app->crates)
+						{
+							for (size_t i = 0; i < app->n_crates; i++)
+							{
+								app->crates[i]->setLinearVelocity(mb::uniRand(-.1, .1), mb::uniRand(-.1, .1), mb::uniRand(-.1, .1));
+							}
+						}
+					}
+					break;
 				case 'm':
 				case 'M':
 					if (app->crates)
