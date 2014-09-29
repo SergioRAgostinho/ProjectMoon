@@ -54,6 +54,10 @@ namespace mb {
 
 		//Kinect sensor object
 		Kinect::Sensor kinect;
+		osg::Matrix k_trans;
+		const osg::Vec3 k_pos;
+		const float k_pitch;
+		const float k_yaw;
 
 		//Collision related
 		//body

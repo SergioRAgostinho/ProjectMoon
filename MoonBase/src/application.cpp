@@ -185,13 +185,13 @@ void Application::nearCallback(void *data, dGeomID o1, dGeomID o2) {
 				return;
 			}
 
-			//Debug Code
-			static unsigned long nr = 0;
-			int class1 = dGeomGetClass(o1);
-			int class2 = dGeomGetClass(o2);
-			int isSpace1 = dGeomIsSpace(o1);
-			int isSpace2 = dGeomIsSpace(o2);
-			DEBUG_LOG("crashing against something " << nr++);
+			////Debug Code
+			//static unsigned long nr = 0;
+			//int class1 = dGeomGetClass(o1);
+			//int class2 = dGeomGetClass(o2);
+			//int isSpace1 = dGeomIsSpace(o1);
+			//int isSpace2 = dGeomIsSpace(o2);
+			//DEBUG_LOG("crashing against something " << nr++);
 
 			//both static objects
             if (b1 == nullptr && b2 == nullptr) {
@@ -365,7 +365,7 @@ void Application::renderLoop() {
 
 		//Physics update
 		dSpaceCollide(pSpace, (void*) this, &nearCallback);
-		//parabolicFlightGravityModifier();
+		parabolicFlightGravityModifier();
 		dWorldQuickStep(pWorld, stepSize);
 		dJointGroupEmpty(pCollisionJG);
 

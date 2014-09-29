@@ -437,7 +437,7 @@ osg::Quat Body::getAttitude() {
 //Get Position
 osg::Vec3 Body::getPosition() {
     return gPAT->getPosition();
-}
+}	
 
 void Body::setAngularVelocity(double x, double y, double z) {
     if(pBody)

@@ -22,25 +22,19 @@
 
 using namespace mb;
 
+#define _HM_CONSTRUCTOR front_scale(0.8), front_offset(0.4), lat_scale(0.6), lat_offset(0.1), \
+	vert_scale(0.6),vert_offset(0), k_pos(osg::Vec3(0, 0, 0)), k_pitch(0), k_yaw(0) 
+//vert_scale(0.6), vert_offset(0), k_pos(osg::Vec3(0, -0.5, 0)), k_pitch(30), k_yaw(0)
+
 HumanManipulator::HumanManipulator() : 
-front_scale(0.8),
-front_offset(0.4),
-lat_scale(0.6),
-lat_offset(0.1),
-vert_scale(0.6),
-vert_offset(0)
+_HM_CONSTRUCTOR
 {
 	_mode = DEFAULT;
 	sharedInitialization();
 }
 
 HumanManipulator::HumanManipulator(osgViewer::Viewer* v, HumanManipulatorMode mode) :
-front_scale(0.8),
-front_offset(0.4),
-lat_scale(0.6),
-lat_offset(0.1),
-vert_scale(0.6),
-vert_offset(0)
+_HM_CONSTRUCTOR
 {
 	
 	viewer = v;
@@ -87,6 +81,11 @@ void HumanManipulator::sharedInitialization(HumanManipulatorMode mode) {
 
 	//Initializing the hands sensitivty parameters
 	//(done in the class initializers due to const modifier)
+
+	//Initialize frame of reference transformation
+	k_trans = osg::Matrix::identity();
+	k_trans.setRotate(osg::Quat(k_pitch*M_PI / 180.0f, osg::Vec3(1, 0, 0), k_yaw*M_PI / 180.0f, osg::Vec3(0, 1, 0), 0, osg::Vec3(1, 0, 0)));
+	k_trans.setTrans(k_pos);
 }
 
 
@@ -186,18 +185,23 @@ void HumanManipulator::processSkeleton() {
 				activeSkeletonPresent = true;
 
 				//Position update
-				Vector4 centre = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER];
-				_movement.set(centre.x, centre.y, 2*centre.z);
+				Vector4 centre_unc = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER];
+				osg::Vec4 centre = osg::Vec4(centre_unc.x, centre_unc.y, centre_unc.z, centre_unc.w) *k_trans;
+				_movement.set(centre.x(), centre.y(), 2*centre.z());
+				//std::cout << centre_unc.x << " " << centre_unc.y << " " << centre_unc.z << " "
+				//	<< centre.x() << " " << centre.y() << " " << centre.z() << std::endl;
 
-				Vector4 l_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT];
-				l_hand_in_cam.set(lat_scale*(l_hand_coords.x - centre.x) - lat_offset, 
-					vert_scale*(l_hand_coords.y - centre.y) + vert_offset,
-					front_scale*(l_hand_coords.z - centre.z) - front_offset);
+				Vector4 l_hand_coords_unc = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT];
+				osg::Vec4 l_hand_coords = osg::Vec4(l_hand_coords_unc.x, l_hand_coords_unc.y, l_hand_coords_unc.z, l_hand_coords_unc.w) *k_trans;
+				l_hand_in_cam.set(lat_scale*(l_hand_coords.x() - centre.x()) - lat_offset, 
+					vert_scale*(l_hand_coords.y() - centre.y()) + vert_offset,
+					front_scale*(l_hand_coords.z() - centre.z()) - front_offset);
 
-				Vector4 r_hand_coords = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT];
-				r_hand_in_cam.set(lat_scale*(r_hand_coords.x - centre.x) + lat_offset, 
-					vert_scale*(r_hand_coords.y - centre.y) + vert_offset,
-					front_scale*(r_hand_coords.z - centre.z) - front_offset);
+				Vector4 r_hand_coords_unc = s_frame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT];
+				osg::Vec4 r_hand_coords = osg::Vec4(r_hand_coords_unc.x, r_hand_coords_unc.y, r_hand_coords_unc.z, r_hand_coords_unc.w) *k_trans;
+				r_hand_in_cam.set(lat_scale*(r_hand_coords.x() - centre.x()) + lat_offset, 
+					vert_scale*(r_hand_coords.y() - centre.y()) + vert_offset,
+					front_scale*(r_hand_coords.z() - centre.z()) - front_offset);
 
 				//Attitude updates
 				NUI_SKELETON_BONE_ORIENTATION boneOrientations[NUI_SKELETON_POSITION_COUNT];
